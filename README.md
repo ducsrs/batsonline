@@ -55,14 +55,10 @@ The final results need to be clear and show what areas to conserve, what bat spe
 
 
 Roadblocks
-If we get to the data freeze but our dashboard won’t run properly 
-It may take a long time to get our data cleaned and sorted properly
-We Are Already Working on this with Amy to find the most productive way of organizing
-If there isn’t an intern to continue this work beyond this summer 
-This is kind of out of our hands, but we may be able to help guide someone outside of the data lab on what we have done
-Commenting our code will be important for this 
-Losing the data-
-If the labels dont end up together and dont match, we will lose track of what went where, and theres so many files
-Make sure the data is connected with the right compartment and site and management status at the time of sampling
-Keep the right species pairings
+If we get to the data freeze but our dashboard won’t run properly. 
+It may take a long time to get our data cleaned and sorted properly.
+We Are Already Working on this with Amy to find the most productive way of organizing.
+If the labels dont end up together and dont match, we will lose track of what went where, and theres so many files.
+Make sure the data is connected with the right compartment and site and management status at the time of sampling.
+Keep the right species pairings.
 
