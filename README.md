@@ -31,3 +31,38 @@ The data we have comes from several sensors that the OESS has placed anywhere we
 Long-term goals include using the dashboard to continue logging data from our field research and strategizing based on the results. A key factor that hasn’t seen intense analysis would be how weather patterns affect how a bat interacts with its environment, especially recently as climate change evolves. There are multiple aspects of forest management that could be affecting where bats choose to roam, such as if an area has been burnt recently or not.
 Overall, my team and I have done immense preparation for a plan to help Sewanee’s bats, we just need to put it into action.
 
+
+### Pre-Mortem Analysis
+Goal-Setting
+A structured, specific set of goals and criteria for evaluating their completion.
+
+
+Goals:
+Our MVP is an interactive dashboard that displays graphs showing the activity of bat species over time and by habitat type at Sewanee. 
+For this to be successful, the final results need to be adaptable. The program needs to be able to handle large amounts of data flowing in consistently and display it accurately, or we’ll essentially be providing a trampoline without springs.
+Stretch Goals:
+Stretch goals would need to examine the bat activity trends with regard to weather patterns.
+We also will look at activity trends in management areas (ex. Fire, wood cutting, etc.) versus other areas. 
+Dashboard: 
+It will be an interactive dashboard showing multiple years of data
+We want to create a dashboard that Amy and her team can easily add more data to and it’ll update itself
+The dashboard needs to be able to analyze past and future data
+It will be for anyone who is interested but primarily for the Sewanee Bat Study 
+It will show multiple years of data in multiple locations; probably with the main display that shows bat activity across all years, and tabs for filtering data by year and location. With our stretch goal, we would add another tab that shows the effects of weather/climate.
+We aim to possibly include maps in our dashboard; exact coordinate mapping would pose too much risk of the recording equipment being disturbed, but we hope to create a GIS map that allows us to highlight custom geographical compartments instead.
+Final Results:
+The final results need to be clear and show what areas to conserve, what bat species are thriving or declining, where the most food is/where the bats are going for their food, how the forest management affects bat activity, etc.
+
+
+Roadblocks
+If we get to the data freeze but our dashboard won’t run properly 
+It may take a long time to get our data cleaned and sorted properly
+We Are Already Working on this with Amy to find the most productive way of organizing
+If there isn’t an intern to continue this work beyond this summer 
+This is kind of out of our hands, but we may be able to help guide someone outside of the data lab on what we have done
+Commenting our code will be important for this 
+Losing the data-
+If the labels dont end up together and dont match, we will lose track of what went where, and theres so many files
+Make sure the data is connected with the right compartment and site and management status at the time of sampling
+Keep the right species pairings
+
