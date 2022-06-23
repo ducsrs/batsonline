@@ -1,6 +1,6 @@
 ---
 title: "Data Preview"
-author: "Hallie Rutten"
+author: "Hallie Rutten, Shelby Cline, Monae Scott"
 date: '2022-06-16'
 output: html_document
 ---
