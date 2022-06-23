@@ -1,0 +1,363 @@
+---
+title: "Data Preview"
+author: "Hallie Rutten"
+date: '2022-06-16'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+#library(ggthemes)
+#library(gsheet)
+library(readxl)
+library(lubridate)
+library(hms)
+#library(tidytext)
+```
+
+Before you run this code, make sure you...
+- have a folder called 'Data' that holds all the compartments and sub-folders
+- set your session working directory in the same place this 'Data' folder is
+- ideally have this markdown file in the same place as the 'Data' folder
+
+```{r}
+# get all file path names in Data folder -----
+files <- paste0('Data/',dir('Data/',recursive=TRUE))
+
+# filter out non-data files -----
+files <- data.frame(files) %>% 
+  filter( grepl("Compartment",files) )
+
+# get the path names of all the raw data files -----
+files.data <- files %>% 
+  filter( !grepl("idsummary",files), grepl(".csv$|.xls$|.xlsx$",files) )
+
+# get the path names of all the summary data files -----
+files.summaries <- files %>% 
+  filter( grepl("idsummary",files) )
+
+# get the path names of all the other files -----
+files.other <- files %>% 
+  filter( !grepl("idsummary",files), !grepl(".csv$|.xls$|.xlsx$",files) )
+```
+
+
+```{r, eval=FALSE}
+# test if rbind works with different column names -----
+x <- c(1:10)
+y <- x*2
+z <- x^2
+
+xy <- data.frame(x,y)
+xz <- data.frame(x,z)
+
+rbind(xy, xz)
+# it does not
+
+# test if rbind works with missing column names -----
+rbind(xy, data.frame(x))
+# it does not
+
+# the columns have to match exactly
+```
+
+
+```{r, eval=FALSE}
+# read raw data column names -----
+names1 <- toupper( names(read_excel(files.data$files[1])) )
+
+names <- c()
+x12 <- data.frame()
+for(file in files.data$files){
+  message(file)
+  tmp <- c()
+  if( grepl('.csv',file) ){
+    try( tmp <-  toupper(names(read.csv(file))) )
+  }
+  if( grepl('.xls|.xlsx',file) ){
+    try( tmp <-  toupper(names(read_excel(file))) )
+  }
+  if("X.HOUR.12" %in% tmp){
+    x12 <- rbind( x12, data.frame(path=file,name=paste(tmp,sep='',collapse=' ')) )
+  }
+  names <- c(names, tmp)
+}
+
+# check and clean raw data column names -----
+names <- unique(names)
+
+names1
+names
+
+names.cleaned <- gsub(" ",".",names)
+names.cleaned <- gsub("-",".",names.cleaned)
+names.cleaned <- gsub("*","",names.cleaned)
+names.cleaned <- gsub("AUTO.ID.","AUTO.ID",names.cleaned)
+names.cleaned <- gsub("DURATION","DUR",names.cleaned)
+#names.cleaned <- gsub("X.HOUR.12","HOUR.12",names.cleaned)
+names.cleaned <- unique(names.cleaned)
+
+names <- sort(names)
+names.cleaned <- sort(names.cleaned)
+names1 <- sort(names1)
+
+length(names)
+length(names.cleaned)
+length(names1)
+
+# drop unnecessary columns? -----
+extra <- c('FC','FILES','FIRMWARE','FK','FMAX','FMEAN','FMIN','FOLDER','IN.FILE',
+           'INDIR','INPATHMD5','OFFSET','OUT.FILE','OUT.FILE.FS','OUT.FILE.ZC',
+           'OUTDIR','OUTPATHMD5FS','OUTPATHMD5ZC','SC','TBC','TC','TK')
+
+names1[ -which(names1 %in% extra) ]
+names.cleaned[ -which(names.cleaned %in% extra) ]
+
+# X.HOUR.12 -----
+x12.2 <- x12 %>% filter( grepl("HOUR.12",name) )
+x12.dat <- read_csv( x12$path[1] )
+```
+
+
+```{r, eval=FALSE}
+# checking data files for variables -----
+
+# variables to keep
+standard <- c('AUTO.ID', 'DATE', 'HOUR', 'TIME')
+# LONGITUDE and LATITUDE are not in all of them
+merges <- c('ALTERNATES','ALTERNATE.1','ALTERNATE.2')
+
+# create empty data frame before loop runs
+names <- data.frame()
+
+# for every file path in the data.files set...
+for(file in files.data$files){
+  
+  # let us know what file it's working on
+  message(file)
+  # set 'tmp' to be an empty vector
+  tmp <- c()
+  # make the 'set' boolean false
+  set <- FALSE
+  
+  # if the file is a csv, try read_csv
+  if( grepl('.csv',file) ){
+    try( tmp <- toupper(names(read_csv(file))) )
+  } 
+  #if it's an excel, try read_excel
+  if( grepl('.xls|.xlsx',file) ){
+    try( tmp <- toupper(names(read_excel(file))) )
+  }
+  
+  # if we got something from the reads (aka if tmp is no longer empty)...
+  if( !is.null(tmp) ){
+    # clean up the formatting
+    tmp <- gsub(" ",".",tmp)
+    tmp <- gsub("-",".",tmp)
+    tmp <- gsub("*","",tmp)
+    tmp <- gsub("AUTO.ID.","AUTO.ID",tmp)
+    # collapse the vector into a single string
+    tmp <- paste(tmp,sep='',collapse=' ')
+    # check if 'ALTERNATES' ~or~ 'ALTERNATE.1' and 'ALTERNATE.2' are in the string
+    if( grepl('ALTERNATES',tmp) | (grepl('ALTERNATE.1',tmp)&grepl('ALTERNATE.1',tmp)) ){
+      # if so, make 'set' true
+      set <- TRUE
+    }#--end alternates variable check---
+    # for each standard variable we need...
+    for(var in standard){
+      # check to make sure it's in the variables pulled from the most recent dataset
+      # if a single one is not, mark it by making 'set' FALSE
+      if( !grepl(var, tmp) ){ set <- FALSE }
+    }#--end standard var check loop--
+    # add the current entry of variable name checking to the data frame
+    names <- rbind( names, data.frame( path=file, vars=tmp, good=set) )
+  }#--end tmp not null loop--
+  
+}#--end big loop--
+
+# tracking an error:
+#Error in read.table(file = file, header = header, sep = sep, quote = quote, : more columns than column names
+# turns out that particular file was a summary file that never got renamed
+```
+
+
+```{r}
+# reading in the data -----
+
+# variables to keep
+standard <- c('AUTO.ID', 'DATE', 'HOUR', 'TIME','LONGITUDE','LATITUDE')
+# LONGITUDE and LATITUDE are not in all of them
+merges <- c('ALTERNATES','ALTERNATE.1','ALTERNATE.2')
+
+# empty data frame to hold the data
+bats <- data.frame()
+
+# for every file path in the data.files set...
+for(file in files.data$files){
+  
+  # let us know what file it's working on
+  message(file)
+  # set 'vars' to be an empty vector (for the variable names)
+  vars <- c()
+  # set 'temp' to be an empty data frame (for the data)
+  temp <- data.frame()
+  
+  # if the file is a csv, try read_csv
+  if( grepl('.csv',file) ){
+    try( temp <- read_csv(file, show_col_types=FALSE) )
+  } 
+  #if it's an excel, try read_excel
+  if( grepl('.xls|.xlsx',file) ){
+    try( temp <- read_excel(file) )
+  }
+  
+  # if we accidentally read in a summary file, reset 'temp' to an empty data frame
+  if( length(temp)>0 & grepl("KALEIDOSCOPE", paste(names(temp),sep='',collapse=' ')) ){ 
+    temp <- data.frame() 
+  }
+  
+  # if we got data from the reads (aka if 'temp' is no longer empty)...
+  if( length(temp)>0 ){
+    
+    # change variable names to uppercase
+    names(temp) <- toupper(names(temp))
+    # clean up the formatting
+    names(temp) <- gsub(" ",".",names(temp))
+    names(temp) <- gsub("-",".",names(temp))
+    names(temp) <- gsub("*","",names(temp))
+    names(temp) <- gsub("AUTO.ID.","AUTO.ID",names(temp))
+    # get the cleaned variable names
+    vars <- names(temp)
+    # collapse the vector into a single string
+    vars <- paste(vars,sep='',collapse=' ')
+    
+    # check if it has ALTERNATE.1 and ALTERNATE.2
+    if( grepl('ALTERNATE.1',vars) & grepl('ALTERNATE.1',vars) ){
+      temp <- temp %>% 
+        mutate( ALTERNATES = paste(c(ALTERNATE.1,ALTERNATE.2),sep='',collapse=';') )
+    }#--end alternates 1 and 2 check ---
+    # check if it doesn't have ALTERNATES
+    if( !grepl('ALTERNATES',vars) ){
+      temp['ALTERNATES'] <- NA
+    }#--end missing alternates var creation--
+    
+    # for each standard variable we need...
+    for(var in standard){
+      # check to make sure it's in the variables string
+      # if any given one is missing, make an empty column for it
+      if( !grepl(var, vars) ){ temp[var] <- NA }
+    }#--end standard var check loop--
+    
+    # select only the variables we want
+    temp <- temp %>% select(AUTO.ID, DATE, HOUR, TIME, ALTERNATES, LATITUDE, LONGITUDE)
+    # make sure DATE and TIME are in the proper format
+    temp <- temp %>% mutate( DATE = as.character(DATE), TIME = as_hms(TIME) )
+    
+    # break the file path up by '/'s
+    C_S <- unlist( strsplit(file, split = "/") )
+    #get the index of the piece that contains 'Compartment'
+    idx <- which(grepl("Compartment",C_S))
+    # if it's the Compartment 22-Firelane folder...
+    if( grepl("Firelane", C_S[ idx ], ignore.case=TRUE) ){
+      # get the portion that contains 'Compartment'
+      C_S <- C_S[idx]
+      # break it up by '-' (so it makes "Compartment 22" and "Firelane")
+      C_S <- unlist( strsplit(C_S, split="-") )
+      # record compartment and change 'Compartment 22' into 'C22'
+      compartment <- gsub("Compartment ","C",C_S[1],ignore.case=TRUE)
+      # record the site (which will be 'Firelane')
+      site <- C_S[2]
+    } 
+    # otherwise, if it's a standard compartment...
+    else {
+      # get the portion after the one that contains 'Compartment'
+      C_S <- C_S[ idx+1 ]
+      # break up by '_', since the standard format is C#_S#
+      C_S <- unlist( strsplit(C_S, split="_") )
+      # record compartment
+      compartment <- C_S[1]
+      # record site
+      site <- C_S[2]
+    }
+    # replace all the P# sites with S# sites
+    site <- gsub("P","S",site)
+    # if there's a space (like from 'C53_P1 (S4Z00723)') keep only the first bit
+    if( grepl(" ",site) ){ site <- unlist( strsplit(site, split=' ') )[1] }
+    # if site is just a number and not 'Firelane'...
+    if( !grepl("S",site) & !grepl("Firelane",site,ignore.case=TRUE) ){
+      # put an 'S' in front of it
+      site <- paste0('S',site)
+    }
+    # add them to the data set
+    temp['COMPARTMENT'] <- compartment
+    temp['SITE'] <- site
+    
+    # combine the current data set with the overall data set
+    bats <- rbind( bats, temp )
+    
+  }#--end temp not null loop--
+  
+}#--end big loop--
+```
+
+
+```{r, eval=FALSE}
+# recording compartment and site test -----
+file
+sub <- unlist( strsplit(file, split = "/") )
+C_S <- sub[ which(grepl("Compartment",sub))+1 ]
+C_S <- unlist( strsplit(C_S, split="_") )
+( compartment <- C_S[1] )
+( site <- C_S[2] )
+```
+
+
+```{r}
+# recording compartment and site test 2 -----
+
+files.CS <- data.frame()
+
+for(file in files.data$files){
+  C_S <- unlist( strsplit(file, split = "/") )
+  if( grepl("Firelane", C_S[which(grepl("Compartment",C_S))], ignore.case=TRUE) ){
+    C_S <- C_S[ which(grepl("Compartment",C_S,ignore.case=TRUE)) ]
+    C_S <- unlist( strsplit(C_S, split="-") )
+    compartment <- gsub("Compartment ","C",C_S[1],ignore.case=TRUE)
+    site <- C_S[2]
+  } 
+  else {
+    C_S <- C_S[ which(grepl("Compartment",C_S))+1 ]
+    C_S <- unlist( strsplit(C_S, split="_") )
+    compartment <- C_S[1]
+    site <- C_S[2]
+  }
+  site <- gsub("P","S",site)
+  if( grepl(" ",site) ){
+    site <- unlist( strsplit(site, split=' ') )[1]
+  }
+  if( !grepl("S",site) & !grepl("Firelane",site,ignore.case=TRUE) ){
+    site <- paste0('S',site)
+  }
+  files.CS <- rbind(files.CS, data.frame(file,compartment,site))
+}
+```
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
