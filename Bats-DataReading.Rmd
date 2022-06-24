@@ -53,44 +53,14 @@ files.other <- files %>%
   filter( !grepl("idsummary",files), !grepl(".csv$|.xls$|.xlsx$",files) )
 ```
 
-
-```{r}
-# recording compartment and site test -----
-
-files.CS <- data.frame()
-
-for(file in files.data$files){
-  C_S <- unlist( strsplit(file, split = "/") )
-  if( grepl("Firelane", C_S[which(grepl("Compartment",C_S))], ignore.case=TRUE) ){
-    C_S <- C_S[ which(grepl("Compartment",C_S,ignore.case=TRUE)) ]
-    C_S <- unlist( strsplit(C_S, split="-") )
-    compartment <- gsub("Compartment ","C",C_S[1],ignore.case=TRUE)
-    site <- C_S[2]
-  } 
-  else {
-    C_S <- C_S[ which(grepl("Compartment",C_S))+1 ]
-    C_S <- unlist( strsplit(C_S, split="_") )
-    compartment <- C_S[1]
-    site <- C_S[2]
-  }
-  site <- gsub("P","S",site)
-  if( grepl(" ",site) ){
-    site <- unlist( strsplit(site, split=' ') )[1]
-  }
-  if( !grepl("S",site) & !grepl("Firelane",site,ignore.case=TRUE) ){
-    site <- paste0('S',site)
-  }
-  files.CS <- rbind(files.CS, data.frame(file,compartment,site))
-}
-```
-
+## Read and process each data file
 
 ```{r}
 # reading in the data -----
 
 # variables to keep
-standard <- c('AUTO.ID', 'DATE', 'HOUR', 'TIME','LONGITUDE','LATITUDE')
-# LONGITUDE and LATITUDE are not in all of them
+standard <- c('AUTO.ID', 'DATE', 'TIME','LONGITUDE','LATITUDE')
+# LONGITUDE and LATITUDE are not in all of them; HOUR can be taken from TIME
 merges <- c('ALTERNATES','ALTERNATE.1','ALTERNATE.2')
 
 # empty data frame to hold the data
@@ -120,8 +90,9 @@ for(file in files.data$files){
     temp <- data.frame() 
   }
   
-  # if we got data from the reads (aka if 'temp' is no longer empty)...
-  if( length(temp)>0 ){
+  # if we got data from the reads...
+  if( length(temp)>0 ){  # (aka if 'temp' has columns)
+  if( nrow(temp[1])>1 ){ # (and the columns have entries)
     
     # change variable names to uppercase
     names(temp) <- toupper(names(temp))
@@ -153,9 +124,11 @@ for(file in files.data$files){
     }#--end standard var check loop--
     
     # select only the variables we want
-    temp <- temp %>% select(AUTO.ID, DATE, HOUR, TIME, ALTERNATES, LATITUDE, LONGITUDE)
+    temp <- temp %>% select(AUTO.ID, DATE, TIME, ALTERNATES, LATITUDE, LONGITUDE)
     # make sure DATE and TIME are in the proper format
-    temp <- temp %>% mutate( DATE = as.character(DATE), TIME = as_hms(TIME) )
+    temp <- temp %>% mutate( DATE = as.character(DATE), TIME = as_hms(TIME),
+                             DATE = gsub('2000','2022',DATE, fixed=TRUE), 
+                             DATE = as.Date(fixDates(DATE)) )
     
     # break the file path up by '/'s
     C_S <- unlist( strsplit(file, split = "/") )
@@ -184,11 +157,11 @@ for(file in files.data$files){
       site <- C_S[2]
     }
     # replace all the P# sites with S# sites
-    site <- gsub("P","S",site)
+    #site <- gsub("P","S",site)
     # if there's a space (like from 'C53_P1 (S4Z00723)') keep only the first bit
     if( grepl(" ",site) ){ site <- unlist( strsplit(site, split=' ') )[1] }
     # if site is just a number and not 'Firelane'...
-    if( !grepl("S",site) & !grepl("Firelane",site,ignore.case=TRUE) ){
+    if( !grepl("S|P",site) & !grepl("Firelane",site,ignore.case=TRUE) ){
       # put an 'S' in front of it
       site <- paste0('S',site)
     }
@@ -203,15 +176,18 @@ for(file in files.data$files){
     # combine the current data set with the overall data set
     bats <- rbind( bats, temp )
     
-  }#--end temp not null loop--
+  }}#--end temp not null checks--
   
 }#--end big loop--
 
-# convert dates -----
-bats <- bats %>% 
-  mutate( date = gsub('2000','2022',DATE), 
-          date = as.Date(fixDates(date)) )
+#write.csv(bats, file='bats.csv')
+saveRDS(bats, file='bats.RData')
 ```
 
+#### Reading back in the RData file:
 
+```{r, eval=FALSE}
+# code for reading in the RData file -----
+bats <- readRDS('bats.RData')
+```
 

@@ -193,5 +193,35 @@ C_S <- unlist( strsplit(C_S, split="_") )
 ( site <- C_S[2] )
 ```
 
- 
- 
+
+```{r}
+# recording compartment and site test -----
+
+files.CS <- data.frame()
+
+for(file in files.data$files){
+  C_S <- unlist( strsplit(file, split = "/") )
+  if( grepl("Firelane", C_S[which(grepl("Compartment",C_S))], ignore.case=TRUE) ){
+    C_S <- C_S[ which(grepl("Compartment",C_S,ignore.case=TRUE)) ]
+    C_S <- unlist( strsplit(C_S, split="-") )
+    compartment <- gsub("Compartment ","C",C_S[1],ignore.case=TRUE)
+    site <- C_S[2]
+  } 
+  else {
+    C_S <- C_S[ which(grepl("Compartment",C_S))+1 ]
+    C_S <- unlist( strsplit(C_S, split="_") )
+    compartment <- C_S[1]
+    site <- C_S[2]
+  }
+  site <- gsub("P","S",site)
+  if( grepl(" ",site) ){
+    site <- unlist( strsplit(site, split=' ') )[1]
+  }
+  if( !grepl("S",site) & !grepl("Firelane",site,ignore.case=TRUE) ){
+    site <- paste0('S',site)
+  }
+  files.CS <- rbind(files.CS, data.frame(file,compartment,site))
+}
+```
+
+

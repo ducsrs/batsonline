@@ -271,6 +271,12 @@ length( temp2000.1$DATE ) + length( temp2000.2$DATE )
 Looks like there was some mis-entered data; 
 replacing all 2000's with 2022's should fix it
 
+```{r}
+# convert dates -----
+bats <- bats %>% 
+  mutate( date = gsub('2000','2022',DATE), 
+          date = as.Date(fixDates(date)) )
+```
 
 
 
