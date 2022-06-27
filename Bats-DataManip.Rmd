@@ -1,0 +1,39 @@
+---
+title: "Bats-DataManip"
+author: "Shelby Cline"
+date: '2022-06-27'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+```
+
+## R Markdown
+
+This is an R Markdown document. 
+
+```{r}
+# trying to graph the number of total calls per species
+bats <- readRDS('bats.RData')
+bats <- bats %>% 
+  mutate(year = year(DATE))
+
+No.ID <- c('NoId', 'NoID', 'Noise')
+  
+
+bats.time <- bats %>% 
+  filter(! AUTO.ID %in% No.ID) %>% 
+  filter(year < 2022) %>% 
+  group_by(year, AUTO.ID) %>%
+  tally()
+
+ggplot(data = bats.time, aes(x = year, y = n, color = AUTO.ID))+
+  geom_line()+
+  labs(title = 'Number of Total Calls Per Species', subtitle = "From 2017-2021", x = 'Year', y = 'Number of Calls')
+```
+
+
+```{r}
