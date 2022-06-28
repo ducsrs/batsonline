@@ -22,7 +22,8 @@ bats <- bats %>%
 # Any bat listed as CORROW should be listed as the secondary species
 bats <- bats %>% 
   mutate( AUTO.ID = gsub("CORROW", 
-                         unlist(strsplit(ALTERNATES, split=';', fixed=TRUE))[1]) )
+                         unlist(strsplit(ALTERNATES, split=';', fixed=TRUE))[1],
+                         AUTO.ID) )
 ```
 
 
@@ -40,5 +41,35 @@ ggplot(data=bats.time, aes(x=year, y=n, color=AUTO.ID) )+
        subtitle = "From 2017-2021", 
        x = 'Year', y = 'Number of Calls')
 ```
+
+```{r}
+# my goal is to group everything and then use summarize so that I can have the total frequency of the bats by species across months.
+freq_by_month <- bats %>% 
+  
+  group_by(year, monthN, AUTO.ID) %>% 
+  filter(! AUTO.ID %in% No.ID) %>% 
+  summarize(frequencies = n())
+
+
+# With the graph, I want to filter to keep only specific year and species combinations for clarity, and I want months to be on the x-axis and the number of calls recorded on the y. 
+chosen_species <- levels(factor(freq_by_month$AUTO.ID))
+
+ggplot(data = freq_by_month %>% filter(AUTO.ID %in% chosen_species, year == 2017),
+       aes(x = monthN,
+           y = frequencies,
+           color = AUTO.ID))+
+  geom_line() 
+
+
+
+
+
+
+
+
+
+
+``` 
+
 
 
