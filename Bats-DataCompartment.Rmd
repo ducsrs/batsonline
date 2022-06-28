@@ -68,7 +68,7 @@ ggplot(data=compart %>% filter(! AUTO.ID %in% c("NoId", "NoID", "Noise")), aes(x
 ```{r}
 #load bat species and abbreviations excel sheet
 library(readxl)
-batspecies <- read_excel("Bat Species Names and Abbreviations .xlsx")
+batspecies <- read_excel("BatSpecies.xlsx")
 
 #merge the 2 datasets 
 bats<-merge(bats,batspecies, by="AUTO.ID")
