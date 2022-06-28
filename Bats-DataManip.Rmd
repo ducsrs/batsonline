@@ -16,8 +16,13 @@ bats <- readRDS('bats.RData')
 bats <- bats %>% 
   mutate(year = year(DATE), 
          monthN = month(DATE),
-         month = month.abb[as.numeric(monthN)],
+         month = month.abb[monthN],
          hour = hour(TIME) )
+
+# Any bat listed as CORROW should be listed as the secondary species
+bats <- bats %>% 
+  mutate( AUTO.ID = gsub("CORROW", 
+                         unlist(strsplit(ALTERNATES, split=';', fixed=TRUE))[1]) )
 ```
 
 
