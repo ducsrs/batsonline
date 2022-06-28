@@ -1,0 +1,78 @@
+---
+title: "Bats-DataCompartment"
+author: "Monae Scott"
+date: '2022-06-28'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#load libraries and data
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(tidyverse)
+library(ggthemes)
+
+bats <- readRDS('bats.RData')
+
+bats <- bats %>% 
+  mutate(year = year(DATE), 
+         monthN = month(DATE),
+         month = month.abb[monthN],
+         hour = hour(TIME) )
+
+# Any bat listed as CORROW should be listed as the secondary species
+bats <- bats %>% 
+  mutate( AUTO.ID = gsub("CORROW", 
+                         unlist(strsplit(ALTERNATES, split=';', fixed=TRUE))[1],
+                         AUTO.ID) )
+```
+
+```{r fig.height=20}
+#create a df for compartments
+compart<-bats %>% 
+  group_by(COMPARTMENT, AUTO.ID) %>% 
+  tally() %>%
+  ungroup() %>%
+  mutate( COMPARTMENT = factor( COMPARTMENT, 
+                                levels = c("C1",
+                                           "C5",
+                                           "C8",
+                                           "C20",
+                                           "C22",
+                                           "C24",
+                                           "C27",
+                                           "C31",
+                                           "C33",
+                                           "C36",
+                                           "C40",
+                                           "C46",
+                                           "C48",
+                                           "C50",
+                                           "C53")))
+  
+#plot species by each compartment 
+ggplot(data=compart %>% filter(! AUTO.ID %in% c("NoId", "NoID", "Noise")), aes(x=AUTO.ID, y=n, fill=AUTO.ID))+
+  geom_col()+
+  facet_wrap(~COMPARTMENT, scales="free", ncol=3) +
+  theme( legend.position = "none" ) +
+  coord_flip()+
+    scale_y_continuous(n.breaks = 4)
+
+```
+
+```{r}
+#load bat species and abbreviations excel sheet
+library(readxl)
+batspecies <- read_excel("Bat Species Names and Abbreviations .xlsx")
+
+#merge the 2 datasets 
+bats<-merge(bats,batspecies, by="AUTO.ID")
+
+```
+
+
