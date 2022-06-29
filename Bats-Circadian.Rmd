@@ -1,0 +1,29 @@
+---
+title: 'Bats: Circadian Trends'
+author: "Hallie Rutten, Shelby Cline, Monae Scott"
+date: '2022-06-29'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+
+bats <- readRDS('bats.RData')
+
+bats <- bats %>% 
+  mutate(year = year(DATE), 
+         monthN = month(DATE),
+         month = month.abb[monthN],
+         hour = hour(TIME) )
+
+# Any bat listed as CORROW should be listed as the secondary species
+bats <- bats %>% 
+  mutate( AUTO.ID = gsub("CORROW", 
+                         unlist(strsplit(ALTERNATES, split=';', fixed=TRUE))[1],
+                         AUTO.ID) )
+```
+
+# Circadian (hourly) Trends
