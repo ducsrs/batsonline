@@ -8,25 +8,99 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-library(tidyverse)
-library(lubridate)
-library(readxl)
-
-bats <- readRDS('bats.RData')
-
-bats <- bats %>% 
-  mutate(year = year(DATE), 
-         monthN = month(DATE),
-         month = month.abb[monthN],
-         hour = hour(TIME),
-         sensor = paste(COMPARTMENT,SITE, sep='_') ) %>% 
-  filter( AUTO.ID != 'Noise' )
-
-# Any bat listed as CORROW should be listed as the secondary species
-bats <- bats %>% 
-  mutate( AUTO.ID = gsub("CORROW", 
-                         unlist(strsplit(ALTERNATES, split=';', fixed=TRUE))[1],
-                         AUTO.ID) )
+source('dataRead.R')
 ```
 
 # Circadian (hourly) Trends
+
+Bat activity by hour of day
+
+
+### Hourly
+
+```{r}
+# account for number of sensors active in each hour -----
+bats.hourly <- bats %>% 
+  group_by(hour) %>% 
+  mutate( nSensors = length(unique(sensor)) )
+
+bats.hourly <- bats.hourly %>% 
+  group_by(hour,AUTO.ID) %>% 
+  summarize( count = n(), 
+             relFreq = count/nSensors )
+
+bats.hourly <- distinct(bats.hourly)%>% 
+  filter(!grepl('NoID',AUTO.ID,ignore.case=TRUE))
+```
+
+```{r}
+# graph hourly bat activity -----
+ggplot( bats.hourly ) +
+  geom_line( aes(x=hour, y=relFreq, color=AUTO.ID) ) +
+  labs(title="Hourly Bat Activity",
+       x="Hour of Day", y="Relative Frequency", 
+       caption="DataLab 2022",
+       color="Species")
+```
+
+
+### Hour and Month
+
+```{r}
+# account for number of sensors active in each month-hour -----
+bats.hr.mon <- bats %>% 
+  group_by(hour,month) %>% 
+  mutate( nSensors = length(unique(sensor)) )
+
+bats.hr.mon <- bats.hr.mon %>% 
+  group_by(hour,month,AUTO.ID) %>% 
+  summarize( count = n(), 
+             relFreq = count/nSensors )
+
+bats.hr.mon <- distinct(bats.hr.mon) %>% 
+  filter(!grepl('NoID',AUTO.ID,ignore.case=TRUE)) %>% 
+  mutate( month = factor(month, levels=month.abb[1:12]) )
+```
+
+```{r}
+# graph hourly bat activity by month -----
+ggplot( bats.hr.mon ) +
+  geom_line( aes(x=hour, y=relFreq, color=AUTO.ID) ) +
+  facet_wrap(~month) +
+  labs(title="Hourly Bat Activity",
+       x="Hour of Day", y="Relative Frequency", 
+       caption="DataLab 2022",
+       color="Species")
+```
+
+
+### Hour and Year
+
+```{r}
+# account for number of sensors active in each year-hour -----
+bats.hr.yr <- bats %>% 
+  group_by(hour,year) %>% 
+  mutate( nSensors = length(unique(sensor)) )
+
+bats.hr.yr <- bats.hr.yr %>% 
+  group_by(hour,year,AUTO.ID) %>% 
+  summarize( count = n(), 
+             relFreq = count/nSensors )
+
+bats.hr.yr <- distinct(bats.hr.yr)%>% 
+  filter(!grepl('NoID',AUTO.ID,ignore.case=TRUE))
+```
+
+```{r}
+# graph hourly bat activity by year -----
+ggplot( bats.hr.yr ) +
+  geom_line( aes(x=hour, y=relFreq, color=AUTO.ID) ) +
+  facet_wrap(~year, ncol=3) +
+  labs(title="Hourly Bat Activity",
+       x="Hour of Day", y="Relative Frequency", 
+       caption="DataLab 2022",
+       color="Species")
+```
+
+
+
