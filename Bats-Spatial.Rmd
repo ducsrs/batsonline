@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #load libraries and data
 library(tidyverse)
 library(lubridate)
+libraray(readxl)
 library(ggplot2)
 library(tidyverse)
 library(ggthemes)
@@ -23,7 +24,9 @@ bats <- bats %>%
   mutate(year = year(DATE), 
          monthN = month(DATE),
          month = month.abb[monthN],
-         hour = hour(TIME) )
+         hour = hour(TIME),
+         sensor = paste(COMPARTMENT,SITE, sep='_') ) %>% 
+  filter( AUTO.ID != 'Noise' )
 
 # Any bat listed as CORROW should be listed as the secondary species
 bats <- bats %>% 
