@@ -1,26 +1,15 @@
 ---
-title: "Bats-DataManip"
-author: "Shelby Cline"
+title: "Bats: Long-Term Trends"
+author: "Shelby Cline, Hallie Rutten, Monae Scott"
 date: '2022-06-27'
 output: html_document
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(tidyverse)
-library(lubridate)
-library(readxl)
-bats <- readRDS('bats.RData')
-bats <- bats %>%
-  mutate(year = year(DATE),
-         monthN = month(DATE),
-         month = month.abb[monthN],
-         hour = hour(TIME),
-         sensor = paste(COMPARTMENT,SITE, sep='_') ) %>%
-  filter( AUTO.ID != 'Noise' )
-# Any bat listed as CORTOW should be listed as CORRAF (Amy text)
-bats <- bats %>%
-  mutate( AUTO.ID = gsub("CORTOW", "CORRAF", AUTO.ID) )
+
+source('dataRead.R')
 ```
+
 ```{r}
 # species call counts by year -----
 No.ID <- c('NoId', 'NoID', 'Noise')
@@ -34,6 +23,7 @@ ggplot(data=bats.time, aes(x=year, y=n, color=AUTO.ID) )+
        subtitle = "From 2017-2021",
        x = 'Year', y = 'Number of Calls')
 ```
+
 ```{r}
 # my goal is to group everything and then use summarize so that I can have the total frequency of the bats by species across months.
 freq_by_month <- bats %>%
@@ -51,6 +41,7 @@ bats %>%
   group_by(AUTO.ID) %>%
   tally()
 ```
+
 ```{r}
 # account for number of sensors active on each date -----
 bats.daily <- bats %>%
@@ -79,6 +70,7 @@ ggplot(data = bats.daily %>% filter(AUTO.ID == 'MYOLUC'))+
        x = 'Year',
        y = 'Frequency')
 ```
+
 ```{r}
 # the goal here was to create a data frame containing the amount of frequencies recorded of a specific species at a specific sensor
 selected_year <- 2017
@@ -93,6 +85,7 @@ ggplot(data = bats.ym %>% filter(year == selected_year),
   geom_col(position = "dodge")+
   facet_wrap(~sensor)
 ```
+
 ```{r}
 # want to create a column of cave obligates versus non-cave obligates to observe their activity
 cave_obligate = c('PERSUB', 'MYOLEI', 'MYOAUS', 'MYOLUC', 'MYOSOD', 'MYOGRI', 'MYOSEP')
