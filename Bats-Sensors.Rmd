@@ -1,5 +1,5 @@
 ---
-title: 'Bats: Climate Trends'
+title: 'Bats: Sensor Performance'
 author: "Hallie Rutten, Shelby Cline, Monae Scott"
 date: '2022-06-29'
 output: html_document
@@ -11,4 +11,4 @@ knitr::opts_chunk$set(echo = TRUE)
 source('dataRead.R')
 ```
 
-# Climate (temperature/weather) Trends
+# Sensor Performance Trends
