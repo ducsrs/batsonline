@@ -8,7 +8,136 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-source('dataRead.R')
+# basic read -----
+#source('dataRead.R')
+library(tidyverse)
+library(lubridate)
+library(readxl)
+
+bats <- readRDS('bats.RData')
+
+bats <- bats %>% 
+  mutate(year = year(DATE), 
+         monthN = month(DATE),
+         month = month.abb[monthN],
+         hour = hour(TIME),
+         sensor = paste(COMPARTMENT,SITE, sep='_') ) %>% 
+  rename( siteID = sensor) %>% 
+  select(-LATITUDE,-LONGITUDE)
+
+# Any bat listed as CORROW should be listed as the secondary species (document)
+# Any bat listed as CORTOW should be listed as CORRAF (Amy text)
+bats <- bats %>% 
+  mutate( AUTO.ID = gsub("CORTOW", "CORRAF", AUTO.ID) )
+
+# read sensor site and date data -----
+sensors <- read_csv('sensorCSdates.csv', show_col_types=FALSE) 
+sensors <- sensors %>% 
+  mutate( siteID = gsub('-','_',siteID),
+          LONGITUDE = -abs(LONGITUDE), 
+          LATITUDE = abs(LATITUDE),
+          habitat = toupper(habitat),
+          habitat = gsub(" FOREST","",habitat),
+          habitat = gsub("UNAMANAGED","UNMANAGED",habitat),
+          habitat = gsub("UNAMANGED","UNMANAGED",habitat) )
 ```
 
+### Sensor/Site Data Manipulation
+
+```{r}
+# make each date one entry -----
+sns <- sensors %>% select(-startDate,-endDate)
+sensorDates <- data.frame()
+for(i in 1:nrow(sensors) ){
+  temp <- data.frame()
+  if( is.na(sensors$endDate[i]) ){ sensors$endDate[i] <- as.Date(Sys.Date()) }
+  DATE <- seq(sensors$startDate[i], sensors$endDate[i], by="days")
+  temp <- data.frame(DATE)
+  for(var in names(sns) ){
+    temp[var] <- sns[i,which(names(sns)==var)]
+  }
+  sensorDates <- rbind(sensorDates,temp)
+}
+```
+
+```{r, eval=FALSE}
+# join method concept testing -----
+idLET <- data.frame( id=c(1:8), 
+                     letter=c('A','B','C','D','A','B','C','D'),
+                     code=c(   1,  1,  1,  1,  2,  2,  2,  2) )
+
+LETcol <- data.frame( letter=c('A','B','C','E','A','B','C'), 
+                      code=c(   1,  1,  1,  1,  2,  2,  2),
+                      color=c('red','blue','yellow','pink',
+                              'orange','purple','green') )
+
+idLETcol <- left_join(idLET, LETcol, by=c('letter','code'))
+```
+
+```{r}
+# join bats and sensor site data -----
+bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
+```
+
+
+
 # Sensor Performance Trends
+
+```{r}
+# recording effort by date -----
+sensor.days <- sensorDates %>% 
+  group_by(DATE) %>% 
+  summarize( nSensors = n() )
+
+ggplot( sensor.days ) +
+  geom_line( aes(x=DATE, y=nSensors) )
+
+ggplot( sensor.days ) +
+  geom_point( aes(x=DATE, y=nSensors), alpha=0.4 )
+```
+
+```{r}
+# monitor accuracy -----
+IDs <- unique(bats$AUTO.ID)
+noID <- c('NoID','NoId')
+IDbats <- IDs[which(! IDs %in% noID & IDs!='Noise')]
+
+monitor.acc <- bats %>% 
+  group_by(monitor,year) %>% 
+  summarize( nBats = sum(as.numeric(AUTO.ID %in% IDbats)),
+             unID = sum(as.numeric(AUTO.ID %in% noID)),
+             noise = sum(as.numeric(grepl("Noise",AUTO.ID,ignore.case=TRUE))),
+             total = sum(nBats,unID,noise),
+             p.unID = unID/total, 
+             p.noise = noise/total )
+
+ggplot( monitor.acc ) +
+  geom_col( aes(x=monitor, y=p.unID, fill=p.unID) ) +
+  facet_wrap(~year) +
+  theme(legend.position='none') +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title="Monitor 'no ID' observations",
+       x="Monitor number", y="proportion of unidentified bats",
+       caption="DataLab 2022")
+
+ggplot( monitor.acc ) +
+  geom_col( aes(x=monitor, y=p.noise, fill=-p.noise) ) +
+  facet_wrap(~year) +
+  theme(legend.position='none') +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title="Monitor 'noise' observations",
+       x="Monitor number", y="proportion of noise",
+       caption="DataLab 2022")
+```
+
+
+
+
+
+
+
+
+
+
+
+
