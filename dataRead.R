@@ -3,6 +3,9 @@
 library(tidyverse)
 library(lubridate)
 library(readxl)
+library(scales)
+library(plotly)
+library(ggthemes)
 
 bats <- readRDS('bats.RData')
 

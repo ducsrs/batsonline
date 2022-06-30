@@ -38,7 +38,14 @@ ggplot(data = freq_by_month %>% filter(AUTO.ID %in% chosen_species, year == 2017
        aes(x = monthN,
            y = frequencies,
            color = AUTO.ID))+
-  geom_line()
+  geom_line()+
+  labs(title = 'Frequencies by Month',
+       subtitle = 'During 2017',
+       x = 'Month by Number',
+       y = 'Number of Calls')
+  
+# here i just wanted to look at the total number of recordings across all species
+
 bats %>%
   group_by(AUTO.ID) %>%
   tally()
@@ -104,3 +111,84 @@ ggplot(data = test,
   geom_line()
 # theres a sharp dip in frequencies of both bats in 2020. interesting.
 ```
+
+
+
+```{r}
+# simple graph of overall amount of recorded calls to start the day
+
+overall_bats <- bats %>%
+  group_by(AUTO.ID) %>%
+  tally()
+
+#i am trying my darndest to understand plotly. the code below is obselete for now, ignore it
+
+ggplotly(p = overall_bats)+
+  geom_col(aes(x = AUTO.ID,
+               y = n))
+
+# this is an actual plot for the overall calls
+ggplot(data = overall_bats)+
+  geom_col(aes(x = AUTO.ID,
+               y = n))+
+  labs(title = 'Total Recordings by Species',
+       x = 'Species',
+       y = 'Number of Calls')+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+  scale_y_continuous(labels = comma)
+
+```
+
+```{r}
+# my goal here is to try and understand trends between EPTFUS and MYOLUC, maybe a cute lil facet wrap for sensors so that I can see if any of them are/were in the same place. anyways
+
+big_v_lil <- bats %>% 
+  group_by(AUTO.ID, sensor, DATE) %>% 
+  filter(AUTO.ID %in% c('MYOLUC','EPTFUS')) %>% 
+  tally()
+
+ggplot(data = big_v_lil)+
+  geom_line(aes(x = DATE,
+                y = n,
+                color = AUTO.ID))+
+  labs(title = 'EPTFUS vs. MYOLUC Presence',
+       x = 'Date',
+       y = 'Number of Recordings')+
+  facet_wrap(~sensor)
+
+# taking a closer look at one of the censors with a lot of activity
+ggplot(data = big_v_lil %>% filter(sensor == "C22_S9"))+
+  geom_line(aes(x = DATE,
+                y = n,
+                color = AUTO.ID))+
+  labs(title = 'EPTFUS vs. MYOLUC Presence',
+       x = 'Date',
+       y = 'Number of Recordings')
+
+# i would love if we put this on the dashboard, if you could choose which sensor graph youre looking at
+
+```
+
+
+
+```{r}
+
+# How have the MYOTIS species fluctuated over time?
+
+myotis <- bats %>% 
+  group_by(AUTO.ID, sensor, DATE, monthN) %>% 
+  filter(AUTO.ID %in% c("MYOLUC","MYOLEI", "MYOSOD", "MYOAUS", "MYOSEP", "MYOGRI")) %>% 
+  tally()
+
+ggplot(data = myotis)+
+  geom_line(aes(x = DATE,
+                y = n,
+                color = AUTO.ID))+
+  labs(title = 'MYOTIS Species Over Time',
+       x = 'Time',
+       y = 'Number of Recordings')+
+  facet_wrap(~AUTO.ID)
+
+
+```
+
