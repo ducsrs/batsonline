@@ -55,7 +55,6 @@ ggplot( bats.hourly ) +
        color="Species")
 ```
 
-
 ### Hour and Month
 
 ```{r}
@@ -84,7 +83,6 @@ ggplot( bats.hr.mon ) +
        caption="DataLab 2022",
        color="Species")
 ```
-
 
 ### Hour and Year
 
@@ -123,12 +121,12 @@ ggplot( bats.hr.yr ) +
 ## Circadian Trends
 
 ```{r}
-# Data filter with stand-in input vars -----
+# set stand-in input vars -----
 
 #use unique() to use all years, others for specific or single years
-  selectedYears <- unique(bats$year)
+  #selectedYears <- unique(bats$year)
   #selectedYears <- c(2020,2021)
-  #selectedYears <- 2019
+  selectedYears <- 2019
 
 #use unique() to use all compartments, others for specific or single compartments
   selectedComps <- unique(bats$COMPARTMENT)
@@ -136,21 +134,24 @@ ggplot( bats.hr.yr ) +
   #selectedComps <- "C50"
   
 #use unique() to show all species, others for specific or single species
-  selectedSpecies <- unique(bats$AUTO.ID)
-  #selectedSpecies <- c("CORRAF","EPTFUS","LASBOR")
+  #selectedSpecies <- unique(bats$AUTO.ID)
+  selectedSpecies <- c("CORRAF","EPTFUS","LASBOR")
   #selectedSpecies <- "NYCHUM"
-
-bats.sub <- bats %>% 
-  filter( year %in% selectedYears, 
-          COMPARTMENT %in% selectedComps,
-          AUTO.ID %in% selectedSpecies,
-          !grepl('NoID',AUTO.ID,ignore.case=TRUE) )
 
 #use whichever is selected (single input choice)
   #wrapVar <- 'year'
   #wrapVar <- 'month'
   #wrapVar <- 'habitat'
   wrapVar <- 'none'
+```
+
+```{r}
+# filter data by stand-in input vars -----
+bats.sub <- bats %>% 
+  filter( year %in% selectedYears, 
+          COMPARTMENT %in% selectedComps,
+          AUTO.ID %in% selectedSpecies,
+          !grepl('NoID',AUTO.ID,ignore.case=TRUE) )
 
 if(wrapVar == 'year'){
   bats.sub <- bats.sub %>% 
@@ -206,5 +207,3 @@ if(wrapVar == 'none'){
   circadian.plot
 }
 ```
-
-
