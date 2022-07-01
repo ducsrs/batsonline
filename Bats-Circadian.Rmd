@@ -9,12 +9,24 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 source('dataRead.R')
+bats <- bats %>% 
+  rename( siteID = sensor) %>% 
+  select(-LATITUDE,-LONGITUDE)
+
+source('data-sensorDates.R')
+
+bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
 ```
 
-# Circadian (hourly) Trends
+
+
+
+
+# EXPLORATORY:
+
+## Circadian (hourly) Trends
 
 Bat activity by hour of day
-
 
 ### Hourly
 
@@ -102,5 +114,97 @@ ggplot( bats.hr.yr ) +
        color="Species")
 ```
 
+
+
+
+
+# DASHBOARD PREP:
+
+## Circadian Trends
+
+```{r}
+# Data filter with stand-in input vars -----
+
+#use unique() to use all years, others for specific or single years
+  selectedYears <- unique(bats$year)
+  #selectedYears <- c(2020,2021)
+  #selectedYears <- 2019
+
+#use unique() to use all compartments, others for specific or single compartments
+  selectedComps <- unique(bats$COMPARTMENT)
+  #selectedComps <- c("C20","C22","C33")
+  #selectedComps <- "C50"
+  
+#use unique() to show all species, others for specific or single species
+  selectedSpecies <- unique(bats$AUTO.ID)
+  #selectedSpecies <- c("CORRAF","EPTFUS","LASBOR")
+  #selectedSpecies <- "NYCHUM"
+
+bats.sub <- bats %>% 
+  filter( year %in% selectedYears, 
+          COMPARTMENT %in% selectedComps,
+          AUTO.ID %in% selectedSpecies,
+          !grepl('NoID',AUTO.ID,ignore.case=TRUE) )
+
+#use whichever is selected (single input choice)
+  #wrapVar <- 'year'
+  #wrapVar <- 'month'
+  #wrapVar <- 'habitat'
+  wrapVar <- 'none'
+
+if(wrapVar == 'year'){
+  bats.sub <- bats.sub %>% 
+    group_by(hour, year) %>% 
+    mutate( nSensors = length(unique(siteID)) )
+  bats.sub <- bats.sub %>% 
+    group_by(hour,year,AUTO.ID) %>% 
+    summarize( count = n(), relFreq = count/nSensors )
+}
+if(wrapVar == 'month') {
+  bats.sub <- bats.sub %>% 
+    group_by(hour, month) %>% 
+    mutate( nSensors = length(unique(siteID)),
+            month = factor(month, levels=month.abb[1:12]) )
+  bats.sub <- bats.sub %>% 
+    group_by(hour,month,AUTO.ID) %>% 
+    summarize( count = n(), relFreq = count/nSensors )
+}
+if(wrapVar == 'habitat'){
+  bats.sub <- bats.sub %>% 
+    group_by(hour, habitat) %>% 
+    mutate( nSensors = length(unique(siteID)) )
+  bats.sub <- bats.sub %>% 
+    group_by(hour,habitat,AUTO.ID) %>% 
+    summarize( count = n(), relFreq = count/nSensors )
+}
+if(wrapVar == 'none'){
+  bats.sub <- bats.sub %>% 
+    group_by(hour) %>% 
+    mutate( nSensors = length(unique(siteID)) )
+  bats.sub <- bats.sub %>% 
+    group_by(hour,AUTO.ID) %>% 
+    summarize( count = n(), relFreq = count/nSensors )
+}
+bats.sub <- distinct(bats.sub)
+```
+
+```{r}
+# graph with stand-in input vars -----
+circadian.plot <- ggplot( bats.sub ) +
+  geom_line( aes(x=hour, y=relFreq, color=AUTO.ID) )
+
+if(wrapVar == 'year'){
+  circadian.plot + facet_wrap(~year)
+}
+if(wrapVar == 'month'){
+  circadian.plot + facet_wrap(~month)
+}
+if(wrapVar == 'habitat'){
+  circadian.plot + facet_wrap(~habitat)
+}
+if(wrapVar == 'none'){
+  circadian.plot
+}
+```
 
 
