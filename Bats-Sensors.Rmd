@@ -81,7 +81,11 @@ bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
 
 
 
-# Sensor Performance Trends
+
+
+# EXPLORATORY:
+
+## Sensor Performance Trends
 
 ```{r}
 # recording effort by date -----
@@ -134,10 +138,129 @@ ggplot( monitor.acc ) +
 
 
 
+# DASHBOARD PREP:
 
+## Sensor Performance
 
+```{r}
+# set stand-in input vars -----
 
+#use unique() to use all years, others for specific or single years
+  selectedYears <- unique(bats$year)
+  #selectedYears <- c(2020,2021)
+  #selectedYears <- 2019
 
+#use unique() to use all compartments, others for specific or single compartments
+  selectedComps <- unique(bats$COMPARTMENT)
+  #selectedComps <- c("C20","C22","C33")
+  #selectedComps <- "C50"
 
+#use whichever is selected (single input choice)
+  param <- 'noise'
+  #param <- 'noID'
 
+#use whichever is selected (single input choice)
+  equip <- 'monitor'
+  #equip <- 'mic'
+
+#use whichever is selected (single input choice)
+  #wrapVar <- 'year'
+  wrapVar <- 'none'
+```
+
+```{r}
+# filter data by stand-in input vars -----
+bats.sub <- bats %>% 
+  filter( year %in% selectedYears,
+          COMPARTMENT %in% selectedComps )
+
+IDs <- unique(bats$AUTO.ID)
+IDbats <- IDs[which( !grepl('noID|Noise',IDs,ignore.case=TRUE) )]
+
+if(equip == 'monitor'){
+  if(wrapVar == 'year'){
+    bats.sub <- bats.sub %>% 
+      group_by(monitor,year) %>% 
+      summarize( nBats = sum(as.numeric(AUTO.ID %in% IDbats)),
+                 unID  = sum(as.numeric(grepl('noID',IDs,ignore.case=TRUE))),
+                 noise = sum(as.numeric(grepl("Noise",AUTO.ID,ignore.case=TRUE))),
+                 total = n(),
+                 p.unID = unID/total, 
+                 p.noise = noise/total )
+  }
+  if(wrapVar == 'none'){
+    bats.sub <- bats.sub %>% 
+      group_by(monitor) %>% 
+      summarize( nBats = sum(as.numeric(AUTO.ID %in% IDbats)),
+                 unID  = sum(as.numeric(grepl('noID',IDs,ignore.case=TRUE))),
+                 noise = sum(as.numeric(grepl("Noise",AUTO.ID,ignore.case=TRUE))),
+                 total = n(),
+                 p.unID = unID/total, 
+                 p.noise = noise/total )
+  }
+}
+if(equip == 'mic'){
+  if(wrapVar == 'year'){
+    bats.sub <- bats.sub %>% 
+      group_by(mic,year) %>% 
+      summarize( nBats = sum(as.numeric(AUTO.ID %in% IDbats)),
+                 unID  = sum(as.numeric(grepl('noID',IDs,ignore.case=TRUE))),
+                 noise = sum(as.numeric(grepl("Noise",AUTO.ID,ignore.case=TRUE))),
+                 total = n(),
+                 p.unID = unID/total, 
+                 p.noise = noise/total )
+  }
+  if(wrapVar == 'none'){
+    bats.sub <- bats.sub %>% 
+      group_by(mic) %>% 
+      summarize( nBats = sum(as.numeric(AUTO.ID %in% IDbats)),
+                 unID  = sum(as.numeric(grepl('noID',IDs,ignore.case=TRUE))),
+                 noise = sum(as.numeric(grepl("Noise",AUTO.ID,ignore.case=TRUE))),
+                 total = n(),
+                 p.unID = unID/total, 
+                 p.noise = noise/total )
+  }
+}
+```
+
+```{r}
+# graph with stand-in input vars -----
+
+if(equip == 'monitor'){
+  if(param == 'noise'){
+    sensor.plot <- ggplot( bats.sub ) +
+      geom_col( aes(x=monitor, y=p.noise, fill=-p.noise) ) +
+      theme(legend.position='none') +
+      theme(axis.text.x = element_text(angle = 90))
+  }
+  if(param == 'noID'){
+    sensor.plot <- ggplot( bats.sub ) +
+      geom_col( aes(x=monitor, y=p.unID, fill=-p.unID) ) +
+      theme(legend.position='none') +
+      theme(axis.text.x = element_text(angle = 90))
+  }
+}
+
+if(equip == 'mic'){
+  if(param == 'noise'){
+    sensor.plot <- ggplot( bats.sub ) +
+      geom_col( aes(x=mic, y=p.noise, fill=-p.noise) ) +
+      theme(legend.position='none') +
+      theme(axis.text.x = element_text(angle = 90))
+  }
+  if(param == 'noID'){
+    sensor.plot <- ggplot( bats.sub ) +
+      geom_col( aes(x=mic, y=p.unID, fill=-p.unID) ) +
+      theme(legend.position='none') +
+      theme(axis.text.x = element_text(angle = 90))
+  }
+}
+
+if(wrapVar == 'year'){
+  sensor.plot + facet_wrap(~year)
+}
+if(wrapVar == 'none'){
+  sensor.plot
+}
+```
 
