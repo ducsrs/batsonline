@@ -17,7 +17,7 @@ bats <- bats %>%
 
 # Any bat listed as CORROW should be listed as the secondary species
 bats <- bats %>% 
-  mutate( AUTO.ID = gsub("CORROW", 
+  mutate( AUTO.ID = gsub("CORTOW", 
                          unlist(strsplit(ALTERNATES, split=';', fixed=TRUE))[1],
                          AUTO.ID) )
 
@@ -74,11 +74,11 @@ ui <- fluidPage(
       #),#end species group check boxes
       
       # year -----
-      sliderInput(inputId = "yearRange", 
-                  label = "Select year range:", 
-                  min=min(bats$year), max=max(bats$year), 
-                  value = c(min(bats$year), max(bats$year)) 
-      ),#end year slider input
+      #sliderInput(inputId = "yearRange", 
+      #            label = "Select year range:", 
+      #            min=min(bats$year), max=max(bats$year), 
+      #            value = c(min(bats$year), max(bats$year)) 
+      #),#end year slider input
       selectInput(inputId = "years", 
                   label = "Select year(s):", 
                   choices = sort(unique(bats$year)),
@@ -121,7 +121,16 @@ ui <- fluidPage(
         
         # About: the intro tab -----
         tabPanel( h4('About'),
-                  plotOutput('about') ),
+                  fluidRow(h1("Welcome!"), 
+                           hr(),
+                           br(),
+                           "Bats are a vital part of ecosystems and have been on the decline due to one of the worst wildlife diseases in modern history, white nose syndrome. Sewanee Bat Study has collected years of data on the behavior and habitats of local cave-dwelling bat species. We are analyzing the data and creating a dashboard to help make better data-driven forest management decisions that will help control the spread of white nose syndrome."),
+                  fluidRow(h2('Long-Term Trends'),
+                           hr(),
+                           br(),
+                           "Any trend that can be found across all years available in our dataset can be found here! IDK this needs work"),
+                  fluidRow(h2('Seasonal Trends'))),
+        
         
         # Long-Term: trends by year tab -----
         tabPanel( h4('Long-Term Trends'),
@@ -170,15 +179,30 @@ server <- function(input, output) {
   # reactive data subset -----
   rv <- reactiveValues()
   observe({
-    rv$bats.sub <- bats
+    rv$bats.sub <- bats %>% 
+      filter(AUTO.ID %in% input$species,
+             DATE >= input$dateRange[1],
+             DATE <= input$dateRange[2])
   })
   
   # Long-Term: yearly trends -----
   output$yearly <- renderPlot({
-    ggplot( rv$bats.sub ) +
-      labs(title="Long-Term Bat Activity Trends",
-           subtitle="By year",
-           caption="DataLab 2022")
+    
+    print(nrow(rv$bats.sub))
+    print(head(rv$bats.sub))
+    
+    ggplot(data = rv$bats.sub %>% 
+             mutate(year.week = paste(year(DATE), ".", week(DATE))) %>% 
+             group_by(AUTO.ID, year.week) %>% 
+             summarize(n = length(DATE), 
+                       dt = DATE[1]) 
+    )+
+      geom_line(aes(x = dt,
+                    y = n,
+                    color = AUTO.ID))+
+      labs(title = 'MYOTIS Species Over Time',
+           x = 'Time',
+           y = 'Number of Recordings')
   })#end yearly trends
   
   # Seasonal: monthly trends -----
