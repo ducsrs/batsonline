@@ -8,7 +8,139 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-source('dataRead.R')
+library(tidyverse)
+library(lubridate)
+library(dplyr)
+bats <- readRDS('bats.RData')
+
+
+bats <- bats %>% 
+  mutate(year = year(DATE), 
+         monthN = month(DATE),
+         month = month.abb[monthN],
+         hour = hour(TIME) ) %>% 
+  filter(! AUTO.ID %in% c( "NoId", "NoID", "Noise" ))
+
+# Any bat listed as CORTOW should be listed as the secondary species
+bats <- bats %>% 
+  mutate( AUTO.ID = gsub("CORTOW", 
+                         unlist(strsplit(ALTERNATES, split=';', fixed=TRUE))[1],
+                         AUTO.ID) )
 ```
 
 # Seasonal (monthly) Trends
+
+```{r}
+
+
+library(readxl)
+#read in daily weather data
+weather <- read_xlsx("SUD Weather Station.xlsx")
+
+#read in hourly weather data
+hourly<-read_xlsx("SUD Weather Station.xlsx", sheet=2)
+
+#read in recorded rain data
+rain<-read_xlsx("SUD Weather Station.xlsx", sheet = 3)
+
+
+#create a variable for  average temp. by month
+# DailyTemp<-weather %>% 
+#   group_by(month(weather$`Timestamp*`)) %>% 
+#   summarize(mean_temp = mean(`Air temp Avg (C)`)) 
+
+#simple plot for weather (average daily temp)
+###bat activity month column 1-12, rain has month column
+
+```
+
+```{r}
+#rename column names in weather df
+colnames(weather)
+weather <- weather %>%
+  dplyr::rename("Date" = "Timestamp*",
+         AvgTemp='Air temp Avg (C)',
+         Highest_Temp_Time='Time Air Temp Max',
+         MaxTemp='Air Temp Max (C)',
+         MinTemp='Air Temp Min',
+         MaxWind='Wind Speed Max (low) (m/s)',
+         AvgWind='Wind Speed Avg (high) (m/S)',
+         MinWind='Wind Speed Min (low) (m/s)')
+
+#variable with date, wind cols and temp cols
+#Daily_Weather<-DailyTemp %>% 
+
+#
+hourly<-hourly %>% 
+  mutate(Date= date(Timestamp)) 
+
+#create 'rainfall' variable to get the avg. rainfall per recorded day 
+rainfall<-hourly %>%  
+  group_by(Date) %>% 
+  summarise(total_rainfall = sum(`Rain (mm)`))
+
+
+#rainfall monthly for each year
+hourly<-hourly %>% 
+  mutate(Month= month(Timestamp)) 
+
+#rainfall yearly
+hourly<-hourly %>% 
+  mutate(Year= year(Timestamp))
+
+yearly_rainfall <- hourly %>% 
+  drop_na( Year ) %>% 
+  group_by(Year) %>%
+  summarise(yearly_rainfall= sum(`Rain (mm)`)) 
+View(yearly_rainfall)  
+
+#ignoring 2017 and NA bc it wasn't enough data
+monthly_rainfall<-hourly %>%  
+  group_by(Month,Year) %>% 
+  summarise(total_monthly_rainfall = sum(`Rain (mm)`)) %>% 
+  filter(Year>2017)
+View(monthly_rainfall)
+
+df <- bats %>% 
+  mutate(Month= month(DATE)) %>% 
+  mutate(Year= year(DATE)) %>% 
+  group_by(Month, Year, AUTO.ID) %>% 
+  tally() %>%
+  ungroup()
+
+df <- left_join(df, monthly_rainfall, by=c('Month', 'Year'))
+  
+#plot monthly rainfall 
+ggplot(data = monthly_rainfall, aes(x=Month, y=total_monthly_rainfall, color=Year))+
+  geom_line()+
+  labs(title='Monthly Rainfall by Year', y='Total Rainfall')+
+  facet_wrap(~Year)+
+   theme( legend.position = "none" ) +
+  scale_x_continuous()
+
+#plot monthly rainfall with bat trends
+df %>% 
+  filter(Year>2017)
+
+```
+```{r}
+library(ggplot2)
+
+df <- df %>% 
+  mutate( Date = ymd(paste0( Year, "-", Month, "-1") ) )
+view(df)
+#then plot bat activity in relation to rain actvity
+df<-df%>% 
+  filter(Year>2017, Year<2022)
+
+
+ggplot()+
+  geom_point(data=df, aes(x=Month, y=n))+
+  geom_point(data=df, aes(x=Month, y=total_monthly_rainfall, color=AUTO.ID))+
+  facet_wrap(~Year, scales="free") +
+  scale_x_continuous( breaks = 1:12)
+
+  # 
+  
+
+```
