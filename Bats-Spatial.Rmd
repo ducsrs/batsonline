@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #load libraries and data
 library(tidyverse)
 library(lubridate)
-libraray(readxl)
+library(readxl)
 library(ggplot2)
 library(tidyverse)
 library(ggthemes)
@@ -28,11 +28,14 @@ bats <- bats %>%
          sensor = paste(COMPARTMENT,SITE, sep='_') ) %>% 
   filter( AUTO.ID != 'Noise' )
 
+
 # Any bat listed as CORROW should be listed as the secondary species
 bats <- bats %>% 
   mutate( AUTO.ID = gsub("CORROW", 
                          unlist(strsplit(ALTERNATES, split=';', fixed=TRUE))[1],
                          AUTO.ID) )
+
+
 ```
 
 ```{r fig.height=20}

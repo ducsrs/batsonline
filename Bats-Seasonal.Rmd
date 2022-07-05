@@ -136,11 +136,11 @@ df<-df%>%
 
 ggplot()+
   geom_point(data=df, aes(x=Month, y=n))+
-  geom_point(data=df, aes(x=Month, y=total_monthly_rainfall, color=AUTO.ID))+
+  geom_line(data=df, aes(x=Month, y=total_monthly_rainfall, color=AUTO.ID))+
   facet_wrap(~Year, scales="free") +
-  scale_x_continuous( breaks = 1:12)
+  scale_x_continuous( breaks = 1:12)+
+  scale_y_continuous("bat count", sec.axis = sec_axis(~))+
 
-  # 
   
 
 ```
