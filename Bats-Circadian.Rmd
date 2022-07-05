@@ -34,7 +34,7 @@ Bat activity by hour of day
 # account for number of sensors active in each hour -----
 bats.hourly <- bats %>% 
   group_by(hour) %>% 
-  mutate( nSensors = length(unique(sensor)) )
+  mutate( nSensors = length(unique(siteID)) )
 
 bats.hourly <- bats.hourly %>% 
   group_by(hour,AUTO.ID) %>% 
@@ -61,7 +61,7 @@ ggplot( bats.hourly ) +
 # account for number of sensors active in each month-hour -----
 bats.hr.mon <- bats %>% 
   group_by(hour,month) %>% 
-  mutate( nSensors = length(unique(sensor)) )
+  mutate( nSensors = length(unique(siteID)) )
 
 bats.hr.mon <- bats.hr.mon %>% 
   group_by(hour,month,AUTO.ID) %>% 
@@ -90,7 +90,7 @@ ggplot( bats.hr.mon ) +
 # account for number of sensors active in each year-hour -----
 bats.hr.yr <- bats %>% 
   group_by(hour,year) %>% 
-  mutate( nSensors = length(unique(sensor)) )
+  mutate( nSensors = length(unique(siteID)) )
 
 bats.hr.yr <- bats.hr.yr %>% 
   group_by(hour,year,AUTO.ID) %>% 
@@ -124,9 +124,9 @@ ggplot( bats.hr.yr ) +
 # set stand-in input vars -----
 
 #use unique() to use all years, others for specific or single years
-  #selectedYears <- unique(bats$year)
+  selectedYears <- unique(bats$year)
   #selectedYears <- c(2020,2021)
-  selectedYears <- 2019
+  #selectedYears <- 2019
 
 #use unique() to use all compartments, others for specific or single compartments
   selectedComps <- unique(bats$COMPARTMENT)
@@ -139,10 +139,10 @@ ggplot( bats.hr.yr ) +
   #selectedSpecies <- "NYCHUM"
 
 #use whichever is selected (single input choice)
-  #wrapVar <- 'year'
+  wrapVar <- 'year'
   #wrapVar <- 'month'
   #wrapVar <- 'habitat'
-  wrapVar <- 'none'
+  #wrapVar <- 'none'
 ```
 
 ```{r}

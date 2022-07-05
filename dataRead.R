@@ -14,8 +14,7 @@ bats <- bats %>%
          monthN = month(DATE),
          month = month.abb[monthN],
          hour = hour(TIME),
-         sensor = paste(COMPARTMENT,SITE, sep='_') ) %>% 
-  filter( AUTO.ID != 'Noise' )
+         sensor = paste(COMPARTMENT,SITE, sep='_') )
 
 # Any bat listed as CORROW should be listed as the secondary species (document)
 # Any bat listed as CORTOW should be listed as CORRAF (Amy text)
