@@ -10,57 +10,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # basic read -----
 source('dataRead.R')
-
-# rename some columns -----
 bats <- bats 
   rename( siteID = sensor) %>% 
   select(-LATITUDE,-LONGITUDE)
 
-# read sensor site and date data -----
-sensors <- read_csv('sensorCSdates.csv', show_col_types=FALSE) 
-sensors <- sensors %>% 
-  mutate( siteID = gsub('-','_',siteID),
-          LONGITUDE = -abs(LONGITUDE), 
-          LATITUDE = abs(LATITUDE),
-          habitat = toupper(habitat),
-          habitat = gsub(" FOREST","",habitat),
-          habitat = gsub("UNAMANAGED","UNMANAGED",habitat),
-          habitat = gsub("UNAMANGED","UNMANAGED",habitat) )
-```
-
-### Sensor/Site Data Manipulation
-
-```{r}
-# make each date one entry -----
-sns <- sensors %>% select(-startDate,-endDate)
-sensorDates <- data.frame()
-for(i in 1:nrow(sensors) ){
-  temp <- data.frame()
-  if( is.na(sensors$endDate[i]) ){ sensors$endDate[i] <- as.Date(Sys.Date()) }
-  DATE <- seq(sensors$startDate[i], sensors$endDate[i], by="days")
-  temp <- data.frame(DATE)
-  for(var in names(sns) ){
-    temp[var] <- sns[i,which(names(sns)==var)]
-  }
-  sensorDates <- rbind(sensorDates,temp)
-}
-```
-
-```{r, eval=FALSE}
-# join method concept testing -----
-idLET <- data.frame( id=c(1:8), 
-                     letter=c('A','B','C','D','A','B','C','D'),
-                     code=c(   1,  1,  1,  1,  2,  2,  2,  2) )
-
-LETcol <- data.frame( letter=c('A','B','C','E','A','B','C'), 
-                      code=c(   1,  1,  1,  1,  2,  2,  2),
-                      color=c('red','blue','yellow','pink',
-                              'orange','purple','green') )
-
-idLETcol <- left_join(idLET, LETcol, by=c('letter','code'))
-```
-
-```{r}
+# sensor data read -----
+source('dataRead-sensorDates.R')
+  
 # join bats and sensor site data -----
 bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
 ```
