@@ -117,15 +117,12 @@ ggplot(data = test,
 ```{r}
 # simple graph of overall amount of recorded calls to start the day
 
-overall_bats <- bats %>%
-  group_by(AUTO.ID) %>%
+ overall_bats <- bats %>%
+ group_by(AUTO.ID) %>%
   tally()
 
 #i am trying my darndest to understand plotly. the code below is obselete for now, ignore it
 
-ggplotly(p = overall_bats)+
-  geom_col(aes(x = AUTO.ID,
-               y = n))
 
 # this is an actual plot for the overall calls
 ggplot(data = overall_bats)+
