@@ -90,18 +90,19 @@ ggplot(data=bats.time, aes(x=year, y=n, color=AUTO.ID) )+
 
 ```{r}
 
-bats.per <- bats %>% 
+bats.prop <- bats %>% 
   filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
   group_by(year) %>% 
   mutate(tot_bat = n())
 
-bats.per <- bats.per %>% 
+bats.prop <- bats.prop %>% 
   group_by(year, AUTO.ID) %>% 
-  summarise(prop = n()/tot_bat)
+  summarise(prop = n()/tot_bat, 
+            perc = prop*10)
 
-bats.per <- distinct(bats.per)
+bats.prop <- distinct(bats.prop)
   
- ggplot(data = bats.per)+
+ ggplot(data = bats.prop)+
    geom_line(aes(x = year,
                  y = prop,
                  color = AUTO.ID))
@@ -110,17 +111,29 @@ bats.per <- distinct(bats.per)
 ```{r}
 
 # trying to learn plotly
+bats.per <- bats %>% 
+  filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
+  group_by(year, COMPARTMENT) %>% 
+  mutate(tot_bat = n())
 
-something <- ggplot(data = bats %>% filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)))+
-  geom_bar(aes(x = year,
-               fill = AUTO.ID),
-           position = 'fill')
+bats.per <- bats.per %>% 
+  group_by(year, AUTO.ID, COMPARTMENT) %>% 
+  summarise(prop = n()/tot_bat, 
+            perc = prop*10)
 
-ggplotly(something) %>% 
-  add_trace(
-    hoverinfo = 'bats$year'
-  )
+bats.per <- distinct(bats.per)
+
+
+something <- ggplot(data = bats.per)+
+  geom_col(aes(x = year,
+               y = perc,
+               fill = AUTO.ID, 
+               text = paste("Compartment:", COMPARTMENT)))
+
+
+ggplotly(something, tooltip = c("fill", "text"))
   
+# by changing the x-axis value, we can create a couple of different graphs to include on the tab to tell different stories
 
 ```
 
