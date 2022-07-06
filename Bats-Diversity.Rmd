@@ -9,6 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 source('dataRead.R')
+No.ID <- c('NoId', 'NoID', 'Noise')
+
 ```
 
 # Diversity (species) Trends
@@ -19,7 +21,7 @@ bats.daily <- bats %>%
   group_by(DATE) %>%
   mutate( nSensors = length(unique(sensor)) )
 bats.daily <- bats.daily %>%
-   filter(! AUTO.ID %in% No.ID) %>%
+  filter(! AUTO.ID %in% No.ID) %>%
   group_by(DATE,AUTO.ID) %>%
   summarize( count = n(),
              relFreq = count/nSensors )
@@ -74,7 +76,7 @@ ggplot(data = big_v_lil %>% filter(sensor == "C22_S9"))+
 
 ```{r}
 # species call counts by year -----
-No.ID <- c('NoId', 'NoID', 'Noise')
+
 bats.time <- bats %>%
   filter(! AUTO.ID %in% No.ID, year < 2022) %>%
   group_by(year, AUTO.ID) %>%
