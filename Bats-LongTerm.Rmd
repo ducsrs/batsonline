@@ -13,20 +13,6 @@ source('dataRead.R')
 # Long-Term (yearly) and Climate (temperature/weather) Trends
 
 ```{r}
-# species call counts by year -----
-No.ID <- c('NoId', 'NoID', 'Noise')
-bats.time <- bats %>%
-  filter(! AUTO.ID %in% No.ID, year < 2022) %>%
-  group_by(year, AUTO.ID) %>%
-  tally()
-ggplot(data=bats.time, aes(x=year, y=n, color=AUTO.ID) )+
-  geom_line()+
-  labs(title = 'Number of Total Calls Per Species',
-       subtitle = "From 2017-2021",
-       x = 'Year', y = 'Number of Calls')
-```
-
-```{r}
 # my goal is to group everything and then use summarize so that I can have the total frequency of the bats by species across months.
 freq_by_month <- bats %>%
   group_by(year, monthN, AUTO.ID) %>%
@@ -72,8 +58,8 @@ ggplot(data = bats.daily %>% filter(AUTO.ID %in% chosen_species)) +
 # now i would like to look at just MYOTIS species
 ggplot(data = bats.daily %>% filter(AUTO.ID == 'MYOLUC'))+
   geom_line(aes(x = DATE,
-                 y = count,
-                color = 'pink')) +
+                 y = count),
+            color = 'blue') +
   labs(title = 'Little Brown Bat Frequencies',
        subtitle = 'Across all Available Years',
        x = 'Year',
@@ -120,8 +106,6 @@ ggplot(data = test,
  overall_bats <- bats %>%
  group_by(AUTO.ID) %>%
   tally()
-
-#i am trying my darndest to understand plotly. the code below is obselete for now, ignore it
 
 
 # this is an actual plot for the overall calls

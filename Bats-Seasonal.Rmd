@@ -129,18 +129,79 @@ library(ggplot2)
 df <- df %>% 
   mutate( Date = ymd(paste0( Year, "-", Month, "-1") ) )
 view(df)
-#then plot bat activity in relation to rain actvity
+#then plot bat activity in relation to rain activity
 df<-df%>% 
   filter(Year>2017, Year<2022)
 
 
 ggplot()+
   geom_point(data=df, aes(x=Month, y=n))+
-  geom_point(data=df, aes(x=Month, y=total_monthly_rainfall, color=AUTO.ID))+
+  geom_line(data=df, aes(x=Month, y=total_monthly_rainfall, color=AUTO.ID))+
   facet_wrap(~Year, scales="free") +
   scale_x_continuous( breaks = 1:12)
 
-  # 
   
+#two plots on top of each other
+  #vertical line that indicates the amount of rainfall 
+  #vertical lines just at the top? 
+  #geom segment or vline 
+  
+  #wind, temp, rain
+```
+```{r}
+#convert temp.from Celsius to Fahrenheit#
+#Max temp
+Fahrenheit<-weather %>% 
+  mutate(MaxTemp_f = MaxTemp*(9/5)+32)
+
+#Min temp
+Fahrenheit<-Fahrenheit %>% 
+  mutate(MinTemp_f = MinTemp*(9/5)+32)
+
+
+
+#merge df and fahrenheit
+#first need to create a month and year column in Fahrenheit data set
+#Fahrenheit<-Fahrenheit %>% 
+
+
+
+
+#plot max temp and bat activity by species 
+
+
+  
+
+```
+
+
+```{r}
+#look at humidity levels and how it affects specific species 
+#is solar total humidity? 
+
+
+#wind monthly for each year
+windy<-weather %>% 
+  mutate(Month= month(Timestamp)) 
+
+#wind yearly
+windy<-weather %>% 
+  mutate(Year= year(Timestamp))
+remove(windy)
+#rename wind column names
+windy <- windy %>%
+  dplyr::rename("Date" = "Timestamp*",
+         AvgTemp='Air temp Avg (C)',
+         Highest_Temp_Time='Time Air Temp Max',
+         MaxTemp='Air Temp Max (C)',
+         MinTemp='Air Temp Min',
+         MaxWind='Wind Speed Max (low) (m/s)',
+         AvgWind='Wind Speed Avg (high) (m/S)',
+         MinWind='Wind Speed Min (low) (m/s)')
+#plot wind
+
+
+
+
 
 ```
