@@ -88,3 +88,39 @@ ggplot(data=bats.time, aes(x=year, y=n, color=AUTO.ID) )+
        x = 'Year', y = 'Number of Calls')
 ```
 
+```{r}
+
+bats.per <- bats %>% 
+  filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
+  group_by(year) %>% 
+  mutate(tot_bat = n())
+
+bats.per <- bats.per %>% 
+  group_by(year, AUTO.ID) %>% 
+  summarise(prop = n()/tot_bat)
+
+bats.per <- distinct(bats.per)
+  
+ ggplot(data = bats.per)+
+   geom_line(aes(x = year,
+                 y = prop,
+                 color = AUTO.ID))
+```
+
+```{r}
+
+# trying to learn plotly
+
+something <- ggplot(data = bats %>% filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)))+
+  geom_bar(aes(x = year,
+               fill = AUTO.ID),
+           position = 'fill')
+
+ggplotly(something) %>% 
+  add_trace(
+    hoverinfo = 'bats$year'
+  )
+  
+
+```
+
