@@ -100,7 +100,7 @@ ui <- fluidPage(
       ),#end date range selection
       
       # compartment -----
-      selectInput(inputId = "compartment2", 
+      selectInput(inputId = "compartment", 
                   label = "Select compartment(s):", 
                   choices = sort(unique(bats$COMPARTMENT)),
                   multiple = TRUE 
