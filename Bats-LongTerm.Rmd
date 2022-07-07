@@ -8,9 +8,86 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 source('dataRead.R')
+No.ID <- c('NoId', 'NoID', 'Noise')
+
 ```
 
 # Long-Term (yearly) and Climate (temperature/weather) Trends
+
+This is the main graph
+
+```{r}
+# species call counts by year -----
+
+# first, we created a dataframe to manipulate
+# then we filter out any no.id data and any noise data. also, the year 2022 is excluded as its incomplete
+# the mutate nsensors is so that we can account for survey effort
+bats.time <- bats %>%
+  filter(! AUTO.ID %in% No.ID, year < 2022) %>%
+  group_by(year) %>%
+  mutate(nsensors = length(unique(sensor))) 
+
+# another code segment to utilize another group_by, this time so i can see the relative frequency of the species per year
+bats.time <- bats.time %>% 
+  group_by(year, AUTO.ID) %>% 
+  summarize(count = n(),
+            rel_freq = count/nsensors)
+bats.time <- unique(bats.time)
+
+#this is just the plot, its copied almost exactly below so we could put it inside of an object to be used in the ggplotly function.
+ggplot(data=bats.time, aes(x=year, y=rel_freq, color=AUTO.ID) )+
+  geom_line()+
+  labs(title = 'Number of Total Calls Per Species',
+       subtitle = "From 2017-2021",
+       x = 'Year', y = 'Number of Calls')
+
+longterm_graph <- ggplot(data=bats.time, 
+                         aes(x=year,
+                             y=rel_freq, 
+                             color=AUTO.ID) )+
+  geom_line()+
+  labs(title = 'Number of Total Calls Per Species',
+       subtitle = "From 2017-2021",
+       x = 'Year', y = 'Number of Calls')
+
+# using hovertemplate allows us to zoom into the graph
+
+ggplotly(longterm_graph, hovertemplate = paste())
+```
+
+
+```{r}
+# want to create a column of cave obligates versus non-cave obligates to observe their activity
+
+#take the total number of non cave bats divided by the number of cave dwelling bats in the whole year 
+cave_obligate = c('PERSUB', 'MYOLEI', 'MYOAUS', 'MYOLUC', 'MYOSOD', 'MYOGRI', 'MYOSEP')
+non_cave_obligate = c('LASBOR', 'NYCHUM', 'EPTFUS', 'LASNOC', 'LASCIN', 'CORRAF')
+test <- bats %>%
+  mutate(`cave obligate?` = AUTO.ID %in% cave_obligate) %>%
+  filter(! AUTO.ID %in% No.ID) %>% 
+  group_by(year, `cave obligate?`) %>% 
+  mutate(tot_bat = n()) 
+
+test <- test %>% 
+  group_by(monthN, `cave obligate?`, year) %>%
+  summarize(prop_bat = n()/tot_bat) %>% 
+  filter(monthN == 12)
+
+ggplot(data = test,
+       aes(x = year,
+           y = prop_bat,
+           color = `cave obligate?`))+
+  geom_line()+
+  labs(title = "Bat Activity in All Recorded Decembers",
+       subtitle = "With Cave Obligate Bats vs. Non-Cave Obligate Bats, 
+Weighted by Proportion to Total Recordings",
+       x = "Year",
+       y = "Bat Activity")
+# theres a sharp dip in frequencies of both bats in 2020. interesting.
+```
+
+This is experimental stuff
+
 
 ```{r}
 # my goal is to group everything and then use summarize so that I can have the total frequency of the bats by species across months.
@@ -81,22 +158,6 @@ ggplot(data = bats.ym %>% filter(year == selected_year),
   facet_wrap(~sensor)
 ```
 
-```{r}
-# want to create a column of cave obligates versus non-cave obligates to observe their activity
-cave_obligate = c('PERSUB', 'MYOLEI', 'MYOAUS', 'MYOLUC', 'MYOSOD', 'MYOGRI', 'MYOSEP')
-non_cave_obligate = c('LASBOR', 'NYCHUM', 'EPTFUS', 'LASNOC', 'LASCIN', 'CORRAF')
-test <- bats %>%
-  mutate(`cave obligate?` = ! AUTO.ID %in% non_cave_obligate) %>%
-  group_by(monthN, `cave obligate?`, year) %>%
-  filter(monthN == 12) %>%
-  tally()
-ggplot(data = test,
-       aes(x = year,
-           y = n,
-           color = `cave obligate?`))+
-  geom_line()
-# theres a sharp dip in frequencies of both bats in 2020. interesting.
-```
 
 
 

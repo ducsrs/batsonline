@@ -15,6 +15,41 @@ No.ID <- c('NoId', 'NoID', 'Noise')
 
 # Diversity (species) Trends
 
+Big Graph
+
+```{r}
+
+# trying to learn plotly
+bats.per <- bats %>% 
+  filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
+  group_by(year, COMPARTMENT) %>% 
+  mutate(tot_bat = n())
+
+bats.per <- bats.per %>% 
+  group_by(year, AUTO.ID, COMPARTMENT) %>% 
+  summarise(prop = n()/tot_bat, 
+            perc = prop*10)
+
+bats.per <- distinct(bats.per)
+
+
+diversity_graph <- ggplot(data = bats.per)+
+  geom_col(aes(x = year,
+               y = perc,
+               fill = AUTO.ID, 
+               text = paste("Compartment:", COMPARTMENT)))
+
+
+ggplotly(diversity_graph, tooltip = c("fill", "text"))
+  
+# by changing the x-axis value, we can create a couple of different graphs to include on the tab to tell different stories
+
+```
+
+
+
+
+Exploratory Analysis
 ```{r}
 # account for number of sensors active on each date -----
 bats.daily <- bats %>%
@@ -75,20 +110,6 @@ ggplot(data = big_v_lil %>% filter(sensor == "C22_S9"))+
 
 
 ```{r}
-# species call counts by year -----
-
-bats.time <- bats %>%
-  filter(! AUTO.ID %in% No.ID, year < 2022) %>%
-  group_by(year, AUTO.ID) %>%
-  tally()
-ggplot(data=bats.time, aes(x=year, y=n, color=AUTO.ID) )+
-  geom_line()+
-  labs(title = 'Number of Total Calls Per Species',
-       subtitle = "From 2017-2021",
-       x = 'Year', y = 'Number of Calls')
-```
-
-```{r}
 
 bats.prop <- bats %>% 
   filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
@@ -108,32 +129,5 @@ bats.prop <- distinct(bats.prop)
                  color = AUTO.ID))
 ```
 
-```{r}
 
-# trying to learn plotly
-bats.per <- bats %>% 
-  filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
-  group_by(year, COMPARTMENT) %>% 
-  mutate(tot_bat = n())
-
-bats.per <- bats.per %>% 
-  group_by(year, AUTO.ID, COMPARTMENT) %>% 
-  summarise(prop = n()/tot_bat, 
-            perc = prop*10)
-
-bats.per <- distinct(bats.per)
-
-
-something <- ggplot(data = bats.per)+
-  geom_col(aes(x = year,
-               y = perc,
-               fill = AUTO.ID, 
-               text = paste("Compartment:", COMPARTMENT)))
-
-
-ggplotly(something, tooltip = c("fill", "text"))
-  
-# by changing the x-axis value, we can create a couple of different graphs to include on the tab to tell different stories
-
-```
 
