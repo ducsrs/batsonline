@@ -11,9 +11,78 @@ knitr::opts_chunk$set(echo = TRUE)
 source('dataRead.R')
 No.ID <- c('NoId', 'NoID', 'Noise')
 
+library(readxl)
+batspecies <- read_excel("BatSpecies.xlsx")
+#merge the 2 datasets
+bats<- left_join(bats,batspecies, by="AUTO.ID")
+
 ```
 
 # Diversity (species) Trends
+
+Big Graph
+
+```{r}
+  
+# by changing the x-axis value, we can create a couple of different graphs to include on the tab to tell different stories
+
+bats.per <- bats %>% 
+  filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
+  group_by(year) %>% 
+  mutate(tot_bat = n())
+
+bats.per <- bats.per %>% 
+  mutate(year = factor(year, levels = min(bats.per$year):max(bats.per$year))) %>% 
+  group_by(year, AUTO.ID, Common) %>% 
+  summarise(prop = n()/tot_bat, 
+            perc = prop*100)
+
+bats.per <- distinct(bats.per)
+
+
+diversity_graph <- ggplot(data = bats.per)+
+  geom_col(aes(x = year,
+               y = perc,
+               fill = AUTO.ID, 
+               text = paste("Percentage:",round(prop*100, 1),
+                            "Species:", Common)))
+
+
+ggplotly(diversity_graph, tooltip = c("fill", "text"))
+
+```
+
+
+
+
+Exploratory Analysis
+
+
+# trying to learn plotly
+
+# commented this out as the one below is better but i might need this if i mess it up too far
+# bats.per <- bats %>% 
+ # filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
+#  group_by(year, COMPARTMENT) %>% 
+ # mutate(tot_bat = n())
+
+#bats.per <- bats.per %>% 
+ # group_by(year, AUTO.ID, COMPARTMENT) %>% 
+ # summarise(prop = n()/tot_bat, 
+  #          perc = prop*100)
+
+# bats.per <- distinct(bats.per)
+
+
+# diversity_graph <- ggplot(data = bats.per)+
+ # geom_col(aes(x = year,
+   #            y = perc,
+     #          fill = AUTO.ID, 
+    #           text = paste("Compartment:", COMPARTMENT,
+             #               "Percentage:", prop*100)))
+
+
+# ggplotly(diversity_graph, tooltip = c("fill", "text"))
 
 ```{r}
 # account for number of sensors active on each date -----
@@ -75,20 +144,6 @@ ggplot(data = big_v_lil %>% filter(sensor == "C22_S9"))+
 
 
 ```{r}
-# species call counts by year -----
-
-bats.time <- bats %>%
-  filter(! AUTO.ID %in% No.ID, year < 2022) %>%
-  group_by(year, AUTO.ID) %>%
-  tally()
-ggplot(data=bats.time, aes(x=year, y=n, color=AUTO.ID) )+
-  geom_line()+
-  labs(title = 'Number of Total Calls Per Species',
-       subtitle = "From 2017-2021",
-       x = 'Year', y = 'Number of Calls')
-```
-
-```{r}
 
 bats.prop <- bats %>% 
   filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
@@ -108,32 +163,5 @@ bats.prop <- distinct(bats.prop)
                  color = AUTO.ID))
 ```
 
-```{r}
 
-# trying to learn plotly
-bats.per <- bats %>% 
-  filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
-  group_by(year, COMPARTMENT) %>% 
-  mutate(tot_bat = n())
-
-bats.per <- bats.per %>% 
-  group_by(year, AUTO.ID, COMPARTMENT) %>% 
-  summarise(prop = n()/tot_bat, 
-            perc = prop*10)
-
-bats.per <- distinct(bats.per)
-
-
-something <- ggplot(data = bats.per)+
-  geom_col(aes(x = year,
-               y = perc,
-               fill = AUTO.ID, 
-               text = paste("Compartment:", COMPARTMENT)))
-
-
-ggplotly(something, tooltip = c("fill", "text"))
-  
-# by changing the x-axis value, we can create a couple of different graphs to include on the tab to tell different stories
-
-```
 
