@@ -10,6 +10,12 @@ knitr::opts_chunk$set(echo = TRUE)
 source('dataRead.R')
 No.ID <- c('NoId', 'NoID', 'Noise')
 
+
+library(readxl)
+batspecies <- read_excel("BatSpecies.xlsx")
+#merge the 2 datasets
+bats<- left_join(bats,batspecies, by="AUTO.ID")
+
 ```
 
 # Long-Term (yearly) and Climate (temperature/weather) Trends
@@ -62,13 +68,14 @@ ggplotly(longterm_graph, hovertemplate = paste())
 #take the total number of non cave bats divided by the number of cave dwelling bats in the whole year 
 cave_obligate = c('PERSUB', 'MYOLEI', 'MYOAUS', 'MYOLUC', 'MYOSOD', 'MYOGRI', 'MYOSEP')
 non_cave_obligate = c('LASBOR', 'NYCHUM', 'EPTFUS', 'LASNOC', 'LASCIN', 'CORRAF')
-test <- bats %>%
+cave_ob <- bats %>%
   mutate(`cave obligate?` = AUTO.ID %in% cave_obligate) %>%
   filter(! AUTO.ID %in% No.ID) %>% 
   group_by(year, `cave obligate?`) %>% 
   mutate(tot_bat = n()) 
 
-test <- test %>% 
+# to make this graph as accurate as possible, we put the proportion of CO bats in december over total NCO bats over time, and then vice versa to graph
+cave_ob <- test %>% 
   group_by(monthN, `cave obligate?`, year) %>%
   summarize(prop_bat = n()/tot_bat) %>% 
   filter(monthN == 12)

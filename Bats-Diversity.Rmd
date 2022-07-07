@@ -11,6 +11,11 @@ knitr::opts_chunk$set(echo = TRUE)
 source('dataRead.R')
 No.ID <- c('NoId', 'NoID', 'Noise')
 
+library(readxl)
+batspecies <- read_excel("BatSpecies.xlsx")
+#merge the 2 datasets
+bats<- left_join(bats,batspecies, by="AUTO.ID")
+
 ```
 
 # Diversity (species) Trends
@@ -18,17 +23,19 @@ No.ID <- c('NoId', 'NoID', 'Noise')
 Big Graph
 
 ```{r}
+  
+# by changing the x-axis value, we can create a couple of different graphs to include on the tab to tell different stories
 
-# trying to learn plotly
 bats.per <- bats %>% 
   filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
-  group_by(year, COMPARTMENT) %>% 
+  group_by(year) %>% 
   mutate(tot_bat = n())
 
 bats.per <- bats.per %>% 
-  group_by(year, AUTO.ID, COMPARTMENT) %>% 
+  mutate(year = factor(year, levels = min(bats.per$year):max(bats.per$year))) %>% 
+  group_by(year, AUTO.ID, Common) %>% 
   summarise(prop = n()/tot_bat, 
-            perc = prop*10)
+            perc = prop*100)
 
 bats.per <- distinct(bats.per)
 
@@ -37,12 +44,11 @@ diversity_graph <- ggplot(data = bats.per)+
   geom_col(aes(x = year,
                y = perc,
                fill = AUTO.ID, 
-               text = paste("Compartment:", COMPARTMENT)))
+               text = paste("Percentage:",round(prop*100, 1),
+                            "Species:", Common)))
 
 
 ggplotly(diversity_graph, tooltip = c("fill", "text"))
-  
-# by changing the x-axis value, we can create a couple of different graphs to include on the tab to tell different stories
 
 ```
 
@@ -50,6 +56,34 @@ ggplotly(diversity_graph, tooltip = c("fill", "text"))
 
 
 Exploratory Analysis
+
+
+# trying to learn plotly
+
+# commented this out as the one below is better but i might need this if i mess it up too far
+# bats.per <- bats %>% 
+ # filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
+#  group_by(year, COMPARTMENT) %>% 
+ # mutate(tot_bat = n())
+
+#bats.per <- bats.per %>% 
+ # group_by(year, AUTO.ID, COMPARTMENT) %>% 
+ # summarise(prop = n()/tot_bat, 
+  #          perc = prop*100)
+
+# bats.per <- distinct(bats.per)
+
+
+# diversity_graph <- ggplot(data = bats.per)+
+ # geom_col(aes(x = year,
+   #            y = perc,
+     #          fill = AUTO.ID, 
+    #           text = paste("Compartment:", COMPARTMENT,
+             #               "Percentage:", prop*100)))
+
+
+# ggplotly(diversity_graph, tooltip = c("fill", "text"))
+
 ```{r}
 # account for number of sensors active on each date -----
 bats.daily <- bats %>%
