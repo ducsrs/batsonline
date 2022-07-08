@@ -192,7 +192,10 @@ df.3<-windy %>%
             MinWind = mean(`MinWind`))
 
 drop_na(df.3)
-  
+
+df.3<-df.3%>% 
+  filter(Year>2017, Year<2022) 
+
 #plot wind ?intensity? 
 ggplot(data = df.3, aes(x=Month, ymin=MinWind, ymax=MaxWind, y=AvgWind))+
   geom_ribbon(fill = "gray")+
@@ -228,4 +231,62 @@ ggplot(data = yearly_rainfall, aes(x=Year, y=yearly_rainfall, fill=Year))+
   theme( legend.position = "none" ) +
   labs(title='Overall Rainfall', caption = 'Sewanee Bat Study. DataLab 2022', y='Total Rainfall (mm)')
 
+```
+
+```{r}
+source('dataRead.R')
+library(readxl)
+batspecies <- read_excel("BatSpecies.xlsx")
+
+bats <- bats %>%  
+  rename( siteID = sensor) %>% 
+  select(-LATITUDE,-LONGITUDE)
+# sensor data read -----
+source('dataRead-sensorDates.R')
+  
+# join bats and sensor site data -----
+bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
+No.ID = c("Noise", "NoId", "NoID")  
+
+
+bats<-left_join(bats,batspecies, by="AUTO.ID")
+###
+bats.time <- bats %>%
+  filter(! AUTO.ID %in% No.ID, year < 2022) %>%
+  group_by(year) %>%
+  mutate(nsensors = length(unique(siteID)))
+# another code segment to utilize another group_by, this time so i can see the relative frequency of the species per year
+bats.time <- bats.time %>% 
+  group_by(monthN, year, AUTO.ID) %>% 
+  summarize(count = n(),
+            rel_freq = count/nsensors)
+bats.time <- unique(bats.time)
+
+
+#this is just the plot, its copied almost exactly below so we could put it inside of an object to be used in the ggplotly function.
+
+bats.time<-bats.time%>% 
+  filter(year>2017, year<2022)
+
+ggplot(data=bats.time,
+       aes(x=monthN,
+           y=rel_freq,
+           color=AUTO.ID) )+
+  geom_line()+
+  facet_wrap(~year)+
+  labs(title = 'Number of Total Calls Per Species',
+       subtitle = "From 2017-2021",
+       x = 'Year', y = 'Number of Calls')+
+    scale_x_continuous(breaks = 1:12)
+
+longterm_graph <- ggplot(data=bats.time, 
+                         aes(x=monthN,
+                             y=rel_freq, 
+                             color=AUTO.ID) )+
+  geom_line()+
+  labs(title = 'Number of Total Calls Per Species',
+       subtitle = "From 2017-2021",
+       x = 'Year', y = 'Number of Calls')
+# using hovertemplate allows us to zoom into the graph
+ggplotly(longterm_graph, hovertemplate = paste())      
 ```
