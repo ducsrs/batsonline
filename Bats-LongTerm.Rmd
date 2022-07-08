@@ -18,6 +18,8 @@ source('dataRead-sensorDates.R')
   
 # join bats and sensor site data -----
 bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
+
+No.ID = c("Noise", "NoId", "NoID")
 ```
 
 # Long-Term (yearly) and Climate (temperature/weather) Trends
@@ -27,13 +29,14 @@ This is the main graph
 ```{r}
 # species call counts by year -----
 
+selectedYears <- unique(bats$year)
 # first, we created a dataframe to manipulate
 # then we filter out any no.id data and any noise data. also, the year 2022 is excluded as its incomplete
 # the mutate nsensors is so that we can account for survey effort
 bats.time <- bats %>%
   filter(! AUTO.ID %in% No.ID, year < 2022) %>%
   group_by(year) %>%
-  mutate(nsensors = length(unique(sensor))) 
+  mutate(nsensors = length(unique(siteID))) 
 
 # another code segment to utilize another group_by, this time so i can see the relative frequency of the species per year
 bats.time <- bats.time %>% 
@@ -43,7 +46,10 @@ bats.time <- bats.time %>%
 bats.time <- unique(bats.time)
 
 #this is just the plot, its copied almost exactly below so we could put it inside of an object to be used in the ggplotly function.
-ggplot(data=bats.time, aes(x=year, y=rel_freq, color=AUTO.ID) )+
+ggplot(data=bats.time,
+       aes(x=year,
+           y=rel_freq,
+           color=AUTO.ID) )+
   geom_line()+
   labs(title = 'Number of Total Calls Per Species',
        subtitle = "From 2017-2021",
@@ -61,6 +67,15 @@ longterm_graph <- ggplot(data=bats.time,
 # using hovertemplate allows us to zoom into the graph
 
 ggplotly(longterm_graph, hovertemplate = paste())
+
+
+# ok im going to try and format this for the dashbaord
+
+bats.sub.time <- bats.time %>% 
+  filter( year %in% selectedYears, 
+          COMPARTMENT %in% selectedComps,
+          AUTO.ID %in% selectedSpecies,
+          !grepl('NoID',AUTO.ID,ignore.case=TRUE) )
 ```
 
 
@@ -95,6 +110,28 @@ Weighted by Proportion to Total Recordings",
 # theres a sharp dip in frequencies of both bats in 2020. interesting.
 ```
 
+Looking into making species group columns
+
+```{r}
+EPTFUS.LASNOC = c("EPTFUS", "LASNOC")
+LASBOR.NYCHUM = c('LASBOR', "NYCHUM")
+bats <- bats %>% 
+  mutate(species_group = ifelse(grepl("^MYO", AUTO.ID), "MYOTIS", AUTO.ID),
+         species_group = ifelse(AUTO.ID %in% EPTFUS.LASNOC, "EPTFUS.LASNOC", species_group),
+         species_group = ifelse(AUTO.ID %in% LASBOR.NYCHUM, "LASBOR.NYCHUM", species_group))
+
+cave_obligate = c('PERSUB', 'MYOLEI', 'MYOAUS', 'MYOLUC', 'MYOSOD', 'MYOGRI', 'MYOSEP')
+non_cave_obligate = c('LASBOR', 'NYCHUM', 'EPTFUS', 'LASNOC', 'LASCIN', 'CORRAF')
+bats <- bats %>%
+  mutate(`cave obligate?` = ifelse(AUTO.ID %in% cave_obligate, TRUE, NA),
+         `cave obligate?` = ifelse(AUTO.ID %in% non_cave_obligate, FALSE, `cave obligate?`))
+  
+```
+
+
+
+
+
 This is experimental stuff
 
 
@@ -127,7 +164,7 @@ bats %>%
 # account for number of sensors active on each date -----
 bats.daily <- bats %>%
   group_by(DATE) %>%
-  mutate( nSensors = length(unique(sensor)) )
+  mutate( nSensors = length(unique(siteID)) )
 bats.daily <- bats.daily %>%
    filter(! AUTO.ID %in% No.ID) %>%
   group_by(DATE,AUTO.ID) %>%
@@ -156,7 +193,7 @@ ggplot(data = bats.daily %>% filter(AUTO.ID == 'MYOLUC'))+
 # the goal here was to create a data frame containing the amount of frequencies recorded of a specific species at a specific sensor
 selected_year <- 2017
 bats.ym <- bats %>%
-  group_by(year, month, AUTO.ID, sensor) %>%
+  group_by(year, month, AUTO.ID, siteID) %>%
   tally()
 # then we graphed it and facet-wrapped by sensor to look into each individual one with available data
 ggplot(data = bats.ym %>% filter(year == selected_year),
@@ -164,7 +201,7 @@ ggplot(data = bats.ym %>% filter(year == selected_year),
            y = n,
           fill = AUTO.ID))+
   geom_col(position = "dodge")+
-  facet_wrap(~sensor)
+  facet_wrap(~siteID)
 ```
 
 
@@ -194,7 +231,7 @@ ggplot(data = overall_bats)+
 # my goal here is to try and understand trends between EPTFUS and MYOLUC, maybe a cute lil facet wrap for sensors so that I can see if any of them are/were in the same place. anyways
 
 big_v_lil <- bats %>% 
-  group_by(AUTO.ID, sensor, DATE) %>% 
+  group_by(AUTO.ID, siteID, DATE) %>% 
   filter(AUTO.ID %in% c('MYOLUC','EPTFUS')) %>% 
   tally()
 
@@ -205,10 +242,10 @@ ggplot(data = big_v_lil)+
   labs(title = 'EPTFUS vs. MYOLUC Presence',
        x = 'Date',
        y = 'Number of Recordings')+
-  facet_wrap(~sensor)
+  facet_wrap(~siteID)
 
 # taking a closer look at one of the censors with a lot of activity
-ggplot(data = big_v_lil %>% filter(sensor == "C22_S9"))+
+ggplot(data = big_v_lil %>% filter(siteID == "C22_S9"))+
   geom_line(aes(x = DATE,
                 y = n,
                 color = AUTO.ID))+
@@ -227,7 +264,7 @@ ggplot(data = big_v_lil %>% filter(sensor == "C22_S9"))+
 # How have the MYOTIS species fluctuated over time?
 
 myotis <- bats %>% 
-  group_by(AUTO.ID, sensor, DATE, monthN) %>% 
+  group_by(AUTO.ID, siteID, DATE, monthN) %>% 
   filter(AUTO.ID %in% c("MYOLUC","MYOLEI", "MYOSOD", "MYOAUS", "MYOSEP", "MYOGRI")) %>% 
   tally()
 
