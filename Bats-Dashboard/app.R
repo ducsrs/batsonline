@@ -17,6 +17,8 @@ library(readxl)
 library(lubridate)
 library(ggthemes)
 
+grouping.ops <- c('species','species group','cave dependency')
+
 #--UI--########################################################################
 ui <- dashboardPage(
   skin="purple",
@@ -39,15 +41,15 @@ ui <- dashboardPage(
       menuItem( text="Seasonal Trends",   tabName="monthly",   icon=icon("snowflake") ),
       menuItem( text="Circadian Trends",  tabName="hourly",    icon=icon("clock") ),
       menuItem( text="Spatial Trends",    tabName="site",      icon=icon("map") ),
-      menuItem( text="Diversity Trends",  tabName="diversity", icon=icon("pie-chart") ),
+      menuItem( text="Diversity Trends",  tabName="diversity", icon=icon("chart-pie") ),
       menuItem( text="Sampling Activity", tabName="sensor",    icon=icon("gear") ),
       
       # grouping -----
       #uiOutput("grouping.UI"),
-      radioButtons(inputId="grouping", label="Display trends by:",
-                   choices = c('species', 'species group', 'cave dependency'), 
-                   selected = 'species'
-      ),#end grouping UI
+      #radioButtons(inputId="grouping", label="Display trends by:",
+      #             choices = c('species', 'species group', 'cave dependency'), 
+      #             selected = 'species'
+      #),#end grouping UI
       
       # year filter ----
       selectInput(inputId = "year", 
@@ -80,17 +82,21 @@ ui <- dashboardPage(
     # tabs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     tabItems(
       
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       # About tab -----
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       tabItem(tabName="about",
               
+              # titles row -----
               fluidRow(
                 column(width=9, h1("Introduction") ),
                 column(width=3, h1("Tab Summaries") )
               ),#end titles row
               
-              # about tab row 2
+              # about tab row -----
               fluidRow(
                 
+                # About box -----
                 box( title="About the Sewanee Bat Study", width=9,
                      solidHeader=TRUE, collapsible=TRUE, status='primary',
                      h1("Welcome!"), 
@@ -125,7 +131,7 @@ ui <- dashboardPage(
                      "[Explain Sampling tab]",
                 ),#end about box
                 
-                # tab summaries column
+                # tab summaries column -----
                 column(width=3,
                        
                        box( title="Long-Term Trends", width=NULL,
@@ -166,251 +172,300 @@ ui <- dashboardPage(
                        
                 )#end tabs column
                 
-              )#end about tab row 2
+              )#end about tab row -
               
       ),#end About ---
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       
+      
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       # Long-Term (yearly) trends tab -----
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       tabItem(tabName="yearly",
               
-              # yearly row 1
+              # yearly row -----
               fluidRow(
                 
                 box( title="Long-Term Trends", width=9, 
                      solidHeader=TRUE, status='info',
                      plotOutput("yearly.plot") ),
                 
-                # controls column
+                # controls column --
                 column( width=3,
                         
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='primary', collapsible=TRUE, 
+                             radioButtons(inputId="yearly.grouping", 
+                                          label="Display trends by:",
+                                          choices = grouping.ops, 
+                                          selected = grouping.ops[2]
+                             ),#end grouping UI
                              uiOutput("yearly.group.UI"),
-                             
                              checkboxGroupInput(inputId="yearly.weather",
                                                 label="Weather display:",
                                                 choices=c('rain','temperature','wind')
                              ),#end weather check boxes
-                             
                              radioButtons(inputId="yearly.wrapVar", 
                                           label="Wrap facets by:",
                                           choices = c('none','management'), 
                                           selected = 'none'
                              )#end wrap var selection
-                             
                         ),#end graph controls box
                         
+                        # aesthetic controls
                         box( title="Aesthetic Controls", width=NULL,
-                             status='primary', collapsible=TRUE )
+                             status='primary', collapsible=TRUE 
+                        )#end aesthetics box
                         
                 )#end controls column
                 
-              ),#end yearly row 1
+              ),#end yearly row -
               
       ),#end Long-Term ---
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       
+      
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       # Seasonal (monthly) trends tab -----
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       tabItem(tabName="monthly",
               
-              # monthly row 1
+              # monthly row -----
               fluidRow(
                 
                 box( title="Seasonal Trends", width=9,
                      solidHeader=TRUE, status='info',
                      plotOutput("monthly.plot") ),
                 
+                # controls column --
                 column( width=3,
                         
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='primary', collapsible=TRUE, 
-                             
+                             radioButtons(inputId="monthly.grouping", 
+                                          label="Display trends by:",
+                                          choices = grouping.ops, 
+                                          selected = grouping.ops[2]
+                             ),#end grouping UI
+                             uiOutput("monthly.group.UI"),
                              checkboxGroupInput(inputId="monthly.weather",
                                                 label="Weather display:",
                                                 choices=c('rain','temperature','wind')
                              ),#end weather check boxes
-                             
                              radioButtons(inputId="monthly.wrapVar", 
                                           label="Wrap facets by:",
                                           choices = c('none','year','management'), 
                                           selected = 'none'
                              )#end wrap var selection
-                             
                         ),#end graph controls box
                         
+                        # aesthetic controls
                         box( title="Aesthetic Controls", width=NULL,
-                             status='primary', collapsible=TRUE )
+                             status='primary', collapsible=TRUE 
+                        )#end aesthetics box
+                        
                 )#end controls column
                 
-              ),#end monthly row 1
+              ),#end monthly row -
               
       ),#end Seasonal ---
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       
+      
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       # Circadian (hourly) trends tab -----
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       tabItem(tabName="hourly",
               
-              # hourly row 1
+              # hourly row -----
               fluidRow(
                 
                 box( title="Circadian Trends", width=9,
                      solidHeader=TRUE, status='info',
                      plotOutput("hourly.plot") ),
                 
-                # controls column
+                # controls column --
                 column( width=3,
                         
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='primary', collapsible=TRUE, 
-                             
-                             #checkboxGroupInput(inputId="hourly.weather",
-                             #                   label="Weather display:",
-                             #                   choices=c('rain','temperature','wind')
-                             #),#end weather check boxes
-                             
+                             radioButtons(inputId="hourly.grouping", 
+                                          label="Display trends by:",
+                                          choices = grouping.ops, 
+                                          selected = grouping.ops[2]
+                             ),#end grouping UI
+                             uiOutput("hourly.group.UI"),
                              radioButtons(inputId="hourly.wrapVar", 
                                           label="Wrap facets by:",
                                           choices = c('none','year','month','management'), 
                                           selected = 'none'
                              )#end wrap var selection
-                             
                         ),#end graph controls box
                         
+                        # aesthetics controls
                         box( title="Aesthetic Controls", width=NULL,
-                             status='primary', collapsible=TRUE )
+                             status='primary', collapsible=TRUE 
+                        )#end aesthetics box
+                        
                 )#end controls column
                 
-              ),#end hourly row 1
+              ),#end hourly row -
               
       ),#end Circadian ---
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       
+      
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       # Spatial (site) trends tab -----
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       tabItem(tabName="site",
               
-              # sites row 1
+              # sites row -----
               fluidRow(
                 
                 box( title="Spatial Trends", width=9,
                      solidHeader=TRUE, status='info',
                      plotOutput("site.plot") ),
                 
-                # controls column
+                # controls column --
                 column( width=3,
                         
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='primary', collapsible=TRUE, 
-                             
+                             radioButtons(inputId="site.grouping", 
+                                          label="Display trends by:",
+                                          choices = grouping.ops, 
+                                          selected = grouping.ops[2]
+                             ),#end grouping UI
+                             uiOutput("site.group.UI"),
                              radioButtons(inputId="site.display", 
                                           label="Display style:",
                                           choices = c('facet','multiple'), 
                                           selected = 'facet'
                              )#end wrap var selection
-                             
                         ),#end graph controls box
                         
+                        # aesthetic controls
                         box( title="Aesthetic Controls", width=NULL,
-                             status='primary', collapsible=TRUE )
+                             status='primary', collapsible=TRUE 
+                        )#end aesthetics box
+                        
                 )#end controls column
                 
-              ),#end sites row 1
+              ),#end sites row -
               
       ),#end Spatial ---
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       
+      
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       # Diversity (species) trends tab -----
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       tabItem(tabName="diversity",
               
-              # diversity row 1
+              # diversity row -----
               fluidRow(
                 
                 box( title="Diversity Trends", width=9,
                      solidHeader=TRUE, status='info',
                      plotOutput("diversity.plot") ),
                 
-                # controls column
+                # controls column --
                 column( width=3,
                         
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='primary', collapsible=TRUE, 
-                             
+                             radioButtons(inputId="diversity.grouping", 
+                                          label="Display trends by:",
+                                          choices = grouping.ops, 
+                                          selected = grouping.ops[2]
+                             ),#end grouping UI
+                             uiOutput("diversity.group.UI"),
                              radioButtons(inputId="diversity.wrapVar", 
                                           label="Wrap facets by:",
                                           choices = c('none','management'), 
                                           selected = 'none'
                              )#end wrap var selection
-                             
                         ),#end graph controls box
                         
+                        # aesthetic controls
                         box( title="Aesthetic Controls", width=NULL,
-                             status='primary', collapsible=TRUE )
+                             status='primary', collapsible=TRUE 
+                        )#end aesthetics box
+                        
                 )#end controls column
                 
-              ),#end diversity row 1
+              ),#end diversity row -
               
       ),#end Diversity ---
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       
+      
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       # Sampling Activity tab -----
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       tabItem(tabName="sensor",
               
-              # sampling row 
+              # sampling row -----
               fluidRow(
                 
                 box( title="Sampling Activity", width=9,
                      solidHeader=TRUE, status='primary',
                      plotOutput("sampling.plot") ),
                 
+                # controls column --
                 column( width=3,
                         
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='info', collapsible=TRUE, 
-                             
                              radioButtons(inputId="sampling.granularity", 
                                           label="Granularity:",
                                           choices = c('year','month','day'), 
                                           selected = 'year'
                              )#end wrap var selection
-                             
                         ),#end graph controls box
                         
                         # aesthetic controls
                         box( title="Aesthetic Controls", width=NULL,
                              status='info', collapsible=TRUE,
-                             
                              radioButtons(inputId="sampling.style", 
                                           label="Plot style:",
                                           choices = c('line','points'), 
                                           selected = 'line'
                              )#end wrap var selection
-                             
                         )#end aesthetic controls
                         
                 )#end controls column
                 
-              ),#end sampling row 
+              ),#end sampling row -
               
-              # accuracy row
+              # accuracy row -----
               fluidRow(
                 
-                box( title="Sensor Accuracy", width=9,
-                     solidHeader=TRUE, status='primary',
-                     plotOutput("sensor.plot") ),
+                tabBox(
+                  title="Equipment Accuracy", width=9,
+                  #solidHeader=TRUE, status='primary',
+                  tabPanel("Recorder", plotOutput("sensor.plot") ),
+                  tabPanel("Microphone", plotOutput("mic.plot") )
+                ),#end tab box
                 
-                # controls column
+                # controls column --
                 column( width=3,
                         
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='info', collapsible=TRUE, 
-                             
                              radioButtons(inputId="sensor.ob", 
                                           label="Focus:",
                                           choices = c('Noise','No.ID'), 
                                           selected = 'Noise'
                              )#end wrap var selection
-                             
                         ),#end graph controls box
                         
                         # aesthetic controls
@@ -420,9 +475,10 @@ ui <- dashboardPage(
                         
                 )#end controls column
                 
-              )# end accuracy row
+              )# end accuracy row -
               
       )#end Sampling ---
+      #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       
     )#end tabs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
@@ -444,30 +500,108 @@ server <- function(input, output) {
   
   # Long-Term (yearly) group UI -----
   output$yearly.group.UI <- renderUI({
-    
-    switch(input$grouping,
-           
+    switch(input$yearly.grouping,
            "species"=selectInput(inputId="yearly.group", 
                                  label="Select species:",
                                  choices = c('species'), 
                                  multiple = TRUE
            ),#end species grouping UI
-           
            "species group"=selectInput(inputId="yearly.group", 
                                        label="Select species group(s):",
                                        choices = c('species'), 
                                        multiple = TRUE
            ),#end species group grouping UI
-           
            "cave dependency"=selectInput(inputId="yearly.group", 
                                          label="Select cave status:",
                                          choices = c('dependent','not dependent'), 
                                          multiple = TRUE
            )#end cave dependency grouping UI
-           
     )#end grouping switch
-
-  })#end long-term group UI
+  })#end long-term group UI ---
+  
+  # Seasonal (monthly) group UI -----
+  output$monthly.group.UI <- renderUI({
+    switch(input$monthly.grouping,
+           "species"=selectInput(inputId="monthly.group", 
+                                 label="Select species:",
+                                 choices = c('species'), 
+                                 multiple = TRUE
+           ),#end species grouping UI
+           "species group"=selectInput(inputId="monthly.group", 
+                                       label="Select species group(s):",
+                                       choices = c('species'), 
+                                       multiple = TRUE
+           ),#end species group grouping UI
+           "cave dependency"=selectInput(inputId="monthly.group", 
+                                         label="Select cave status:",
+                                         choices = c('dependent','not dependent'), 
+                                         multiple = TRUE
+           )#end cave dependency grouping UI
+    )#end grouping switch
+  })#end seasonal group UI ---
+  
+  # Circadian (hourly) group UI -----
+  output$hourly.group.UI <- renderUI({
+    switch(input$hourly.grouping,
+           "species"=selectInput(inputId="hourly.group", 
+                                 label="Select species:",
+                                 choices = c('species'), 
+                                 multiple = TRUE
+           ),#end species grouping UI
+           "species group"=selectInput(inputId="hourly.group", 
+                                       label="Select species group(s):",
+                                       choices = c('species groups'), 
+                                       multiple = TRUE
+           ),#end species group grouping UI
+           "cave dependency"=selectInput(inputId="hourly.group", 
+                                         label="Select cave status:",
+                                         choices = c('dependent','not dependent'), 
+                                         multiple = TRUE
+           )#end cave dependency grouping UI
+    )#end grouping switch
+  })#end circadian group UI ---
+  
+  # Spatial (site) group UI -----
+  output$site.group.UI <- renderUI({
+    switch(input$site.grouping,
+           "species"=selectInput(inputId="site.group", 
+                                 label="Select species:",
+                                 choices = c('species'), 
+                                 multiple = TRUE
+           ),#end species grouping UI
+           "species group"=selectInput(inputId="site.group", 
+                                       label="Select species group(s):",
+                                       choices = c('species groups'), 
+                                       multiple = TRUE
+           ),#end species group grouping UI
+           "cave dependency"=selectInput(inputId="site.group", 
+                                         label="Select cave status:",
+                                         choices = c('dependent','not dependent'), 
+                                         multiple = TRUE
+           )#end cave dependency grouping UI
+    )#end grouping switch
+  })#end spatial group UI ---
+  
+  # Diversity (species) group UI -----
+  output$diversity.group.UI <- renderUI({
+    switch(input$diversity.grouping,
+           "species"=selectInput(inputId="diversity.group", 
+                                 label="Select species:",
+                                 choices = c('species'), 
+                                 multiple = TRUE
+           ),#end species grouping UI
+           "species group"=selectInput(inputId="diversity.group", 
+                                       label="Select species group(s):",
+                                       choices = c('species groups'), 
+                                       multiple = TRUE
+           ),#end species group grouping UI
+           "cave dependency"=selectInput(inputId="diversity.group", 
+                                         label="Select cave status:",
+                                         choices = c('dependent','not dependent'), 
+                                         multiple = TRUE
+           )#end cave dependency grouping UI
+    )#end grouping switch
+  })#end diversity group UI ---
   
   # end inputs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
@@ -525,9 +659,17 @@ server <- function(input, output) {
   output$sensor.plot <- renderPlot({
     ggplot() +
       labs(title="Sensor Accuracy",
-           x="Sensor", y="Accuracy",
+           x="Sensor Serial", y="Accuracy",
            caption="Sewanee Bat Study, DataLab 2022")
-  })#end accuracy plot ---
+  })#end sensor plot ---
+  
+  # Microphone Accuracy plot -----
+  output$mic.plot <- renderPlot({
+    ggplot() +
+      labs(title="Microphone Accuracy",
+           x="Mic Serial", y="Accuracy",
+           caption="Sewanee Bat Study, DataLab 2022")
+  })#end mic plot ---
   
   # end plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
