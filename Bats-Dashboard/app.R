@@ -46,10 +46,11 @@ ui <- dashboardPage(
       
       # grouping -----
       #uiOutput("grouping.UI"),
-      #radioButtons(inputId="grouping", label="Display trends by:",
-      #             choices = c('species', 'species group', 'cave dependency'), 
-      #             selected = 'species'
-      #),#end grouping UI
+      radioButtons(inputId="grouping", label="Display trends by:",
+                   choices = grouping.ops, 
+                   selected = grouping.ops[2]
+      ),#end grouping UI
+      uiOutput("group.UI"),
       
       # year filter ----
       selectInput(inputId = "year", 
@@ -196,12 +197,12 @@ ui <- dashboardPage(
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='primary', collapsible=TRUE, 
-                             radioButtons(inputId="yearly.grouping", 
-                                          label="Display trends by:",
-                                          choices = grouping.ops, 
-                                          selected = grouping.ops[2]
-                             ),#end grouping UI
-                             uiOutput("yearly.group.UI"),
+                             #radioButtons(inputId="yearly.grouping", 
+                             #             label="Display trends by:",
+                             #             choices = grouping.ops, 
+                             #             selected = grouping.ops[2]
+                             #),#end grouping UI
+                             #uiOutput("yearly.group.UI"),
                              checkboxGroupInput(inputId="yearly.weather",
                                                 label="Weather display:",
                                                 choices=c('rain','temperature','wind')
@@ -244,12 +245,12 @@ ui <- dashboardPage(
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='primary', collapsible=TRUE, 
-                             radioButtons(inputId="monthly.grouping", 
-                                          label="Display trends by:",
-                                          choices = grouping.ops, 
-                                          selected = grouping.ops[2]
-                             ),#end grouping UI
-                             uiOutput("monthly.group.UI"),
+                             #radioButtons(inputId="monthly.grouping", 
+                             #             label="Display trends by:",
+                             #             choices = grouping.ops, 
+                             #             selected = grouping.ops[2]
+                             #),#end grouping UI
+                             #uiOutput("monthly.group.UI"),
                              checkboxGroupInput(inputId="monthly.weather",
                                                 label="Weather display:",
                                                 choices=c('rain','temperature','wind')
@@ -292,12 +293,12 @@ ui <- dashboardPage(
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='primary', collapsible=TRUE, 
-                             radioButtons(inputId="hourly.grouping", 
-                                          label="Display trends by:",
-                                          choices = grouping.ops, 
-                                          selected = grouping.ops[2]
-                             ),#end grouping UI
-                             uiOutput("hourly.group.UI"),
+                             #radioButtons(inputId="hourly.grouping", 
+                             #             label="Display trends by:",
+                             #             choices = grouping.ops, 
+                             #             selected = grouping.ops[2]
+                             #),#end grouping UI
+                             #uiOutput("hourly.group.UI"),
                              radioButtons(inputId="hourly.wrapVar", 
                                           label="Wrap facets by:",
                                           choices = c('none','year','month','management'), 
@@ -336,12 +337,12 @@ ui <- dashboardPage(
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='primary', collapsible=TRUE, 
-                             radioButtons(inputId="site.grouping", 
-                                          label="Display trends by:",
-                                          choices = grouping.ops, 
-                                          selected = grouping.ops[2]
-                             ),#end grouping UI
-                             uiOutput("site.group.UI"),
+                             #radioButtons(inputId="site.grouping", 
+                             #             label="Display trends by:",
+                             #             choices = grouping.ops, 
+                             #             selected = grouping.ops[2]
+                             #),#end grouping UI
+                             #uiOutput("site.group.UI"),
                              radioButtons(inputId="site.display", 
                                           label="Display style:",
                                           choices = c('facet','multiple'), 
@@ -380,12 +381,12 @@ ui <- dashboardPage(
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='primary', collapsible=TRUE, 
-                             radioButtons(inputId="diversity.grouping", 
-                                          label="Display trends by:",
-                                          choices = grouping.ops, 
-                                          selected = grouping.ops[2]
-                             ),#end grouping UI
-                             uiOutput("diversity.group.UI"),
+                             #radioButtons(inputId="diversity.grouping", 
+                             #             label="Display trends by:",
+                             #             choices = grouping.ops, 
+                             #             selected = grouping.ops[2]
+                             #),#end grouping UI
+                             #uiOutput("diversity.group.UI"),
                              radioButtons(inputId="diversity.wrapVar", 
                                           label="Wrap facets by:",
                                           choices = c('none','management'), 
@@ -489,189 +490,258 @@ ui <- dashboardPage(
 #--SERVER--####################################################################
 server <- function(input, output) { 
   
-  # dynamic inputs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # grouping UI -----
-  #output$grouping.UI <- renderUI({
-  #  radioButtons(inputId="grouping", label="Display trends by:",
-  #               choices = c('species', 'species group', 'cave dependency'), 
-  #               selected = 'species')
-  #})#end grouping UI
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  output$grouping.UI <- renderUI({
+    radioButtons(inputId="grouping", label="Display trends by:",
+                 choices = grouping.ops, 
+                 selected = grouping.ops[2])
+  })#end grouping UI
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Group UI -----
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  output$group.UI <- renderUI({
+    switch(input$grouping,
+           "species"=selectInput(inputId="group", 
+                                 label="Select species:",
+                                 choices = c('species'), 
+                                 multiple = TRUE
+           ),#end species grouping UI
+           "species group"=selectInput(inputId="group", 
+                                       label="Select species group(s):",
+                                       choices = c('species'), 
+                                       multiple = TRUE
+           ),#end species group grouping UI
+           "cave dependency"=selectInput(inputId="group", 
+                                         label="Select cave status:",
+                                         choices = c('dependent','not dependent'), 
+                                         multiple = TRUE
+           )#end cave dependency grouping UI
+    )#end grouping switch
+  })#end group UI ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Long-Term (yearly) group UI -----
-  output$yearly.group.UI <- renderUI({
-    switch(input$yearly.grouping,
-           "species"=selectInput(inputId="yearly.group", 
-                                 label="Select species:",
-                                 choices = c('species'), 
-                                 multiple = TRUE
-           ),#end species grouping UI
-           "species group"=selectInput(inputId="yearly.group", 
-                                       label="Select species group(s):",
-                                       choices = c('species'), 
-                                       multiple = TRUE
-           ),#end species group grouping UI
-           "cave dependency"=selectInput(inputId="yearly.group", 
-                                         label="Select cave status:",
-                                         choices = c('dependent','not dependent'), 
-                                         multiple = TRUE
-           )#end cave dependency grouping UI
-    )#end grouping switch
-  })#end long-term group UI ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  #output$yearly.group.UI <- renderUI({
+  #  switch(input$yearly.grouping,
+  #         "species"=selectInput(inputId="yearly.group", 
+  #                               label="Select species:",
+  #                               choices = c('species'), 
+  #                               multiple = TRUE
+  #         ),#end species grouping UI
+  #         "species group"=selectInput(inputId="yearly.group", 
+  #                                     label="Select species group(s):",
+  #                                     choices = c('species'), 
+  #                                     multiple = TRUE
+  #         ),#end species group grouping UI
+  #         "cave dependency"=selectInput(inputId="yearly.group", 
+  #                                       label="Select cave status:",
+  #                                       choices = c('dependent','not dependent'), 
+  #                                       multiple = TRUE
+  #         )#end cave dependency grouping UI
+  #  )#end grouping switch
+  #})#end long-term group UI ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Seasonal (monthly) group UI -----
-  output$monthly.group.UI <- renderUI({
-    switch(input$monthly.grouping,
-           "species"=selectInput(inputId="monthly.group", 
-                                 label="Select species:",
-                                 choices = c('species'), 
-                                 multiple = TRUE
-           ),#end species grouping UI
-           "species group"=selectInput(inputId="monthly.group", 
-                                       label="Select species group(s):",
-                                       choices = c('species'), 
-                                       multiple = TRUE
-           ),#end species group grouping UI
-           "cave dependency"=selectInput(inputId="monthly.group", 
-                                         label="Select cave status:",
-                                         choices = c('dependent','not dependent'), 
-                                         multiple = TRUE
-           )#end cave dependency grouping UI
-    )#end grouping switch
-  })#end seasonal group UI ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  #output$monthly.group.UI <- renderUI({
+  #  switch(input$monthly.grouping,
+  #         "species"=selectInput(inputId="monthly.group", 
+  #                               label="Select species:",
+  #                               choices = c('species'), 
+  #                               multiple = TRUE
+  #         ),#end species grouping UI
+  #         "species group"=selectInput(inputId="monthly.group", 
+  #                                     label="Select species group(s):",
+  #                                     choices = c('species'), 
+  #                                     multiple = TRUE
+  #         ),#end species group grouping UI
+  #         "cave dependency"=selectInput(inputId="monthly.group", 
+  #                                       label="Select cave status:",
+  #                                       choices = c('dependent','not dependent'), 
+  #                                       multiple = TRUE
+  #         )#end cave dependency grouping UI
+  #  )#end grouping switch
+  #})#end seasonal group UI ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Circadian (hourly) group UI -----
-  output$hourly.group.UI <- renderUI({
-    switch(input$hourly.grouping,
-           "species"=selectInput(inputId="hourly.group", 
-                                 label="Select species:",
-                                 choices = c('species'), 
-                                 multiple = TRUE
-           ),#end species grouping UI
-           "species group"=selectInput(inputId="hourly.group", 
-                                       label="Select species group(s):",
-                                       choices = c('species groups'), 
-                                       multiple = TRUE
-           ),#end species group grouping UI
-           "cave dependency"=selectInput(inputId="hourly.group", 
-                                         label="Select cave status:",
-                                         choices = c('dependent','not dependent'), 
-                                         multiple = TRUE
-           )#end cave dependency grouping UI
-    )#end grouping switch
-  })#end circadian group UI ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  #output$hourly.group.UI <- renderUI({
+  #  switch(input$hourly.grouping,
+  #         "species"=selectInput(inputId="hourly.group", 
+  #                               label="Select species:",
+  #                               choices = c('species'), 
+  #                               multiple = TRUE
+  #         ),#end species grouping UI
+  #         "species group"=selectInput(inputId="hourly.group", 
+  #                                     label="Select species group(s):",
+  #                                     choices = c('species groups'), 
+  #                                     multiple = TRUE
+  #         ),#end species group grouping UI
+  #         "cave dependency"=selectInput(inputId="hourly.group", 
+  #                                       label="Select cave status:",
+  #                                       choices = c('dependent','not dependent'), 
+  #                                       multiple = TRUE
+  #         )#end cave dependency grouping UI
+  #  )#end grouping switch
+  #})#end circadian group UI ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Spatial (site) group UI -----
-  output$site.group.UI <- renderUI({
-    switch(input$site.grouping,
-           "species"=selectInput(inputId="site.group", 
-                                 label="Select species:",
-                                 choices = c('species'), 
-                                 multiple = TRUE
-           ),#end species grouping UI
-           "species group"=selectInput(inputId="site.group", 
-                                       label="Select species group(s):",
-                                       choices = c('species groups'), 
-                                       multiple = TRUE
-           ),#end species group grouping UI
-           "cave dependency"=selectInput(inputId="site.group", 
-                                         label="Select cave status:",
-                                         choices = c('dependent','not dependent'), 
-                                         multiple = TRUE
-           )#end cave dependency grouping UI
-    )#end grouping switch
-  })#end spatial group UI ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  #output$site.group.UI <- renderUI({
+  #  switch(input$site.grouping,
+  #         "species"=selectInput(inputId="site.group", 
+  #                               label="Select species:",
+  #                               choices = c('species'), 
+  #                               multiple = TRUE
+  #         ),#end species grouping UI
+  #         "species group"=selectInput(inputId="site.group", 
+  #                                     label="Select species group(s):",
+  #                                     choices = c('species groups'), 
+  #                                     multiple = TRUE
+  #         ),#end species group grouping UI
+  #         "cave dependency"=selectInput(inputId="site.group", 
+  #                                       label="Select cave status:",
+  #                                       choices = c('dependent','not dependent'), 
+  #                                       multiple = TRUE
+  #         )#end cave dependency grouping UI
+  #  )#end grouping switch
+  #})#end spatial group UI ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Diversity (species) group UI -----
-  output$diversity.group.UI <- renderUI({
-    switch(input$diversity.grouping,
-           "species"=selectInput(inputId="diversity.group", 
-                                 label="Select species:",
-                                 choices = c('species'), 
-                                 multiple = TRUE
-           ),#end species grouping UI
-           "species group"=selectInput(inputId="diversity.group", 
-                                       label="Select species group(s):",
-                                       choices = c('species groups'), 
-                                       multiple = TRUE
-           ),#end species group grouping UI
-           "cave dependency"=selectInput(inputId="diversity.group", 
-                                         label="Select cave status:",
-                                         choices = c('dependent','not dependent'), 
-                                         multiple = TRUE
-           )#end cave dependency grouping UI
-    )#end grouping switch
-  })#end diversity group UI ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  #output$diversity.group.UI <- renderUI({
+  #  switch(input$diversity.grouping,
+  #         "species"=selectInput(inputId="diversity.group", 
+  #                               label="Select species:",
+  #                               choices = c('species'), 
+  #                               multiple = TRUE
+  #         ),#end species grouping UI
+  #         "species group"=selectInput(inputId="diversity.group", 
+  #                                     label="Select species group(s):",
+  #                                     choices = c('species groups'), 
+  #                                     multiple = TRUE
+  #         ),#end species group grouping UI
+  #         "cave dependency"=selectInput(inputId="diversity.group", 
+  #                                       label="Select cave status:",
+  #                                       choices = c('dependent','not dependent'), 
+  #                                       multiple = TRUE
+  #         )#end cave dependency grouping UI
+  #  )#end grouping switch
+  #})#end diversity group UI ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
-  # end inputs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
-  # plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # reactive data -----
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  rv <- reactiveValues()
+  observe({
+    #bats.sub <- bats %>% filter()
+  })
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
+  
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Long-Term (yearly) plot -----
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$yearly.plot <- renderPlot({
     ggplot() +
       labs(title="Long-Term Bat Activity",
            x="Year", y="Relative Frequency",
            caption="Sewanee Bat Study, DataLab 2022")
   })#end long-term plot ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Seasonal (monthly) plot -----
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$monthly.plot <- renderPlot({
     ggplot() +
       labs(title="Seasonal Bat Activity",
            x="Month", y="Relative Frequency",
            caption="Sewanee Bat Study, DataLab 2022")
   })#end seasonal plot ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Circadian (hourly) plot -----
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$hourly.plot <- renderPlot({
     ggplot() +
       labs(title="Circadian Bat Activity",
            x="Hour", y="Relative Frequency",
            caption="Sewanee Bat Study, DataLab 2022")
   })#end circadian plot ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Spatial (site) plot -----
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$site.plot <- renderPlot({
     ggplot() +
       labs(title="Spatial Bat Activity",
            x="Compartment", y="Relative Frequency",
            caption="Sewanee Bat Study, DataLab 2022")
   })#end spatial plot ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Diversity (species) plot -----
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$diversity.plot <- renderPlot({
     ggplot() +
       labs(title="Bat Species Trends",
            x="year/month", y="Proportion",
            caption="Sewanee Bat Study, DataLab 2022")
   })#end diversity plot ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Sampling Activity plot -----
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$sampling.plot <- renderPlot({
     ggplot() +
       labs(title="Sampling Activity",
            x="year/date", y="N Sensors",
            caption="Sewanee Bat Study, DataLab 2022")
   })#end sampling plot ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Sensor Accuracy plot -----
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$sensor.plot <- renderPlot({
     ggplot() +
       labs(title="Sensor Accuracy",
            x="Sensor Serial", y="Accuracy",
            caption="Sewanee Bat Study, DataLab 2022")
   })#end sensor plot ---
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Microphone Accuracy plot -----
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$mic.plot <- renderPlot({
     ggplot() +
       labs(title="Microphone Accuracy",
            x="Mic Serial", y="Accuracy",
            caption="Sewanee Bat Study, DataLab 2022")
   })#end mic plot ---
-  
-  # end plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
 }#end server
 
