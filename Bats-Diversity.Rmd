@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # basic read -----
 source('dataRead.R')
-bats <- bats 
+bats <- bats %>% 
   rename( siteID = sensor) %>% 
   select(-LATITUDE,-LONGITUDE)
 
@@ -19,6 +19,11 @@ source('dataRead-sensorDates.R')
   
 # join bats and sensor site data -----
 bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
+  
+library(readxl)
+batspecies <- read_excel("BatSpecies.xlsx")
+#left join the 2 datasets
+bats<- left_join(bats,batspecies, by="AUTO.ID")
 ```
 
 # Diversity (species) Trends
