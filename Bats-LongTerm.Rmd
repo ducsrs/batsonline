@@ -26,58 +26,6 @@ No.ID = c("Noise", "NoId", "NoID")
 
 This is the main graph
 
-```{r}
-# species call counts by year -----
-
-selectedYears <- unique(bats$year)
-# first, we created a dataframe to manipulate
-# then we filter out any no.id data and any noise data. also, the year 2022 is excluded as its incomplete
-# the mutate nsensors is so that we can account for survey effort
-bats.time <- bats %>%
-  filter(! AUTO.ID %in% No.ID, year < 2022) %>%
-  group_by(year) %>%
-  mutate(nsensors = length(unique(siteID))) 
-
-# another code segment to utilize another group_by, this time so i can see the relative frequency of the species per year
-bats.time <- bats.time %>% 
-  group_by(year, AUTO.ID) %>% 
-  summarize(count = n(),
-            rel_freq = count/nsensors)
-bats.time <- unique(bats.time)
-
-#this is just the plot, its copied almost exactly below so we could put it inside of an object to be used in the ggplotly function.
-ggplot(data=bats.time,
-       aes(x=year,
-           y=rel_freq,
-           color=AUTO.ID) )+
-  geom_line()+
-  labs(title = 'Number of Total Calls Per Species',
-       subtitle = "From 2017-2021",
-       x = 'Year', y = 'Number of Calls')
-
-longterm_graph <- ggplot(data=bats.time, 
-                         aes(x=year,
-                             y=rel_freq, 
-                             color=AUTO.ID) )+
-  geom_line()+
-  labs(title = 'Number of Total Calls Per Species',
-       subtitle = "From 2017-2021",
-       x = 'Year', y = 'Number of Calls')
-
-# using hovertemplate allows us to zoom into the graph
-
-ggplotly(longterm_graph, hovertemplate = paste())
-
-
-# ok im going to try and format this for the dashbaord
-
-bats.sub.time <- bats.time %>% 
-  filter( year %in% selectedYears, 
-          COMPARTMENT %in% selectedComps,
-          AUTO.ID %in% selectedSpecies,
-          !grepl('NoID',AUTO.ID,ignore.case=TRUE) )
-```
-
 
 ```{r}
 # want to create a column of cave obligates versus non-cave obligates to observe their activity
@@ -90,14 +38,16 @@ cave_ob <- bats %>%
   filter(! AUTO.ID %in% No.ID) %>% 
   group_by(year, `cave obligate?`) %>% 
   mutate(tot_bat = n()) 
+```
 
+```{r}
 # to make this graph as accurate as possible, we put the proportion of CO bats in december over total NCO bats over time, and then vice versa to graph
 cave_ob <- test %>% 
   group_by(monthN, `cave obligate?`, year) %>%
   summarize(prop_bat = n()/tot_bat) %>% 
   filter(monthN == 12)
 
-ggplot(data = test,
+ggplot(data = cave_ob,
        aes(x = year,
            y = prop_bat,
            color = `cave obligate?`))+
@@ -129,7 +79,90 @@ bats <- bats %>%
 ```
 
 
+```{r}
+# Possible input values
+selectedGroup <- 'species' # species_group or by cave_ob
+selectedSpecies <- c("CORRAF","EPTFUS","LASBOR")
 
+selectedGroup <- 'species_group'
+selectedSpecies <- c('EPTFUS.LASNOC')
+
+sekectedGroup <- 'Cave obligate'
+setectedSpecies <- 'Dependent'
+
+#use unique() to use all years, others for specific or single years
+  selectedYears <- unique(bats$year)
+  #selectedYears <- c(2020,2021)
+  #selectedYears <- 2019
+
+#use whichever is selected (single input choice)
+  wrapVar <- 'year'
+  #wrapVar <- 'month'
+  #wrapVar <- 'habitat'
+  #wrapVar <- 'none'
+```
+
+
+```{r}
+# species call counts by year -----
+
+bats.sub %>% names
+
+# Filter based on inputs
+bats.sub <- bats %>% 
+  filter( year %in% selectedYears, 
+          !grepl('NoID',AUTO.ID,ignore.case=TRUE) )
+
+# Now prep by selected group
+if(selectedGroup == 'species'){ bats.sub <- bats.sub %>% mutate(groupby = AUTO.ID) }
+if(selectedGroup == 'species_group'){ bats.sub <- bats.sub %>% mutate(groupby = species_group) }
+if(selectedGroup == 'cave_obligate'){ bats.sub <- bats.sub %>% mutate(groupby = `cave obligate?`) }
+
+bats.sub <- bats.sub %>% 
+  filter(groupby %in% selectedSpecies)
+
+# first, we created a dataframe to manipulate
+# then we filter out any no.id data and any noise data. also, the year 2022 is excluded as its incomplete
+# the mutate nsensors is so that we can account for survey effort
+bats.time <- bats.sub %>%
+  filter(! AUTO.ID %in% No.ID, year < 2022) %>%
+  group_by(year) %>%
+  mutate(nsensors = length(unique(siteID))) 
+
+# another code segment to utilize another group_by, this time so i can see the relative frequency of the species per year
+bats.time <- bats.time %>% 
+  group_by(year, groupby) %>% 
+  summarize(count = n(),
+            rel_freq = count/nsensors)
+
+bats.time <- unique(bats.time)
+
+#this is just the plot, its copied almost exactly below so we could put it inside of an object to be used in the ggplotly function.
+ggplot(data=bats.time,
+       aes(x=year,
+           y=rel_freq,
+           color=groupby) )+
+  geom_line()+
+  labs(title = 'Number of Total Calls Per Species',
+       subtitle = "From 2017-2021",
+       x = 'Year', y = 'Number of Calls')
+
+longterm_graph <- ggplot(data=bats.time, 
+                         aes(x=year,
+                             y=rel_freq, 
+                             color=groupby) )+
+  geom_line()+
+  labs(title = 'Number of Total Calls Per Species',
+       subtitle = "From 2017-2021",
+       x = 'Year', y = 'Number of Calls')
+
+# using hovertemplate allows us to zoom into the graph
+
+ggplotly(longterm_graph, hovertemplate = paste())
+
+
+# ok im going to try and format this for the dashbaord
+```
 
 
 This is experimental stuff
