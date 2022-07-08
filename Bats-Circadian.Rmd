@@ -210,3 +210,77 @@ if(wrapVar == 'none'){
   circadian.plot
 }
 ```
+
+
+
+
+# DASHBOARD PREP ROUND 2:
+
+## Circadian Trends
+
+```{r}
+# set stand-in input vars -----
+
+#use unique() to use all years, others for specific or single years
+  selectedYears <- unique(bats$year)
+  #selectedYears <- c(2020,2021)
+  #selectedYears <- 2019
+
+#use unique() to use all compartments, others for specific or single compartments
+  selectedComps <- unique(bats$COMPARTMENT)
+  #selectedComps <- c("C20","C22","C33")
+  #selectedComps <- "C50"
+  
+#use unique() to show all species, others for specific or single species
+  #selectedSpecies <- unique(bats$AUTO.ID)
+  selectedSpecies <- c("CORRAF","EPTFUS","LASBOR")
+  #selectedSpecies <- "NYCHUM"
+
+#use whichever is selected (single input choice)
+  wrapVar <- 'year'
+  #wrapVar <- 'month'
+  #wrapVar <- 'habitat'
+  #wrapVar <- 'none'
+```
+
+```{r}
+# filter data by stand-in input vars -----
+bats.sub <- bats %>% 
+  filter( year %in% selectedYears, 
+          COMPARTMENT %in% selectedComps,
+          AUTO.ID %in% selectedSpecies )
+
+if(wrapVar == 'year'){ bats.sub <- bats.sub %>% mutate(wrapV = year) }
+if(wrapVar == 'month'){ bats.sub <- bats.sub %>% mutate(wrapV = month) }
+if(wrapVar == 'habitat'){ bats.sub <- bats.sub %>% mutate(wrapV = habitat) }
+
+if(wrapVar == 'none'){
+  bats.sub <- bats.sub %>% 
+    group_by(hour) %>% 
+    mutate( nSensors = length(unique(siteID)) )
+  bats.sub <- bats.sub %>% 
+    group_by(hour,AUTO.ID) %>% 
+    summarize( count = n(), relFreq = count/nSensors )
+} else {
+  bats.sub <- bats.sub %>% 
+    group_by(hour, wrapV) %>% 
+    mutate( nSensors = length(unique(siteID)) )
+  bats.sub <- bats.sub %>% 
+    group_by(hour,wrapV,AUTO.ID) %>% 
+    summarize( count = n(), relFreq = count/nSensors )
+}
+```
+
+```{r}
+# graph with stand-in input vars -----
+circadian.plot <- ggplot( bats.sub ) +
+  geom_line( aes(x=hour, y=relFreq, color=AUTO.ID) )
+
+if(wrapVar == 'none'){
+  circadian.plot
+} else {
+  circadian.plot + facet_wrap(~wrapV)
+}
+```
+
+
