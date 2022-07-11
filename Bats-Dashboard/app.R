@@ -12,10 +12,7 @@
 library(shiny)
 library(shinydashboard)
 
-library(tidyverse)
-library(readxl)
-library(lubridate)
-library(ggthemes)
+source('dataRead.R')
 
 grouping.ops <- c('species','species group','cave dependency')
 
@@ -650,7 +647,9 @@ server <- function(input, output) {
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   rv <- reactiveValues()
   observe({
-    #bats.sub <- bats %>% filter()
+    #bats.sub <- bats %>% 
+    #  filter( year %in% input$year, 
+    #          AUTO.ID %in% input$group )
   })
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
