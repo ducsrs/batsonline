@@ -65,34 +65,44 @@ weather <- weather %>%
 #Daily_Weather<-DailyTemp %>% 
 
 #
+rain %>% 
+  mutate(Date = date(Timestamp)) %>% 
+  mutate(year = year(Date)) %>% 
+  group_by(year) %>% 
+  summarize(dates = length(unique(Date))) %>% 
+  View
+
 hourly<-hourly %>% 
   mutate(Date= date(Timestamp)) 
 
 #create 'rainfall' variable to get the avg. rainfall per recorded day 
-rainfall<-hourly %>%  
-  group_by(Date) %>% 
-  summarise(total_rainfall = sum(`Rain (mm)`))
-
+daily_rainfall<-hourly %>%  
+  mutate(Month= month(Timestamp)) %>% 
+  mutate(Year= year(Timestamp)) %>% 
+  group_by(Year, Date, Month) %>% 
+  summarise(total_rainfall = sum(`Rain (mm)`),
+            total_hours = n()) %>% 
+  mutate(mm_hr = total_rainfall / total_hours) %>% 
+  mutate(mm_predicted = mm_hr * 24) 
 
 #rainfall monthly for each year
-hourly<-hourly %>% 
-  mutate(Month= month(Timestamp)) 
+#hourly<-hourly %>% 
+#  mutate(Month= month(Timestamp)) 
 
 #rainfall yearly
-hourly<-hourly %>% 
-  mutate(Year= year(Timestamp))
+#hourly<-hourly %>% 
+#  mutate(Year= year(Timestamp))
 
-yearly_rainfall <- hourly %>% 
+yearly_rainfall <- daily_rainfall  %>% 
   drop_na( Year ) %>% 
   group_by(Year) %>%
-  summarise(yearly_rainfall= sum(`Rain (mm)`)) 
+  summarise(rain_intensity= sum(total_rainfall)/sum(total_hours)) 
 View(yearly_rainfall)  
 
 #ignoring 2017 and NA bc it wasn't enough data
-monthly_rainfall<-hourly %>%  
+monthly_rainfall<-daily_rainfall %>%  
   group_by(Month,Year) %>% 
-  summarise(total_monthly_rainfall = sum(`Rain (mm)`)) %>% 
-  filter(Year>2017)
+  summarise(rain_intensity= sum(total_rainfall)/sum(total_hours)) 
 View(monthly_rainfall)
 
 df <- bats %>% 
@@ -108,12 +118,28 @@ df <- left_join(df, monthly_rainfall, by=c('Month', 'Year'))
 df %>% 
   filter(Year>2017) 
 #plot monthly rainfall 
-ggplot(data = monthly_rainfall, aes(x=Month, y=total_monthly_rainfall, fill=Year))+
+ggplot(data = monthly_rainfall, aes(x=Month, y=rain_intensity, fill=Year))+
   geom_area()+
-  labs(title='Monthly Rainfall by Year', caption = 'Sewanee Bat Study. DataLab 2022', y='Total Rainfall (mm)')+
+  labs(title='Monthly Rainfall by Year', caption = 'Sewanee Bat Study. DataLab 2022', y='Total Rain Intensity (mm/hr)')+
   facet_wrap(~Year)+
    theme( legend.position = "none" ) +
   scale_x_continuous(breaks = 1:12)
+
+###calculate the total rain for the year
+#group by day
+#Get the average rain intensity for the day 
+#Multiply the average by the numb of sec in a day
+#That gives me daily rainfall and It can be summed up for monthly, yearly
+
+### do i need to mutate the date variable to get the day from it? total rain fall df has all the rain for each day summarized already 
+
+rainfall <- rainfall %>% 
+  mutate(Day= day(Date)) %>% 
+  group_by(Day) %>% 
+  summarise(total_rainfall=mean(total_rainfall*86400))
+
+###not sure if i did this correctly...###
+
 
 
 
@@ -290,3 +316,7 @@ longterm_graph <- ggplot(data=bats.time,
 # using hovertemplate allows us to zoom into the graph
 ggplotly(longterm_graph, hovertemplate = paste())      
 ```
+
+
+
+
