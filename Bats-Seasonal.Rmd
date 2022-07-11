@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(lubridate)
 library(dplyr)
+library(plotly)
 bats <- readRDS('bats.RData')
 
 
@@ -43,9 +44,6 @@ hourly<-read_xlsx("SUD Weather Station.xlsx", sheet=2)
 #read in recorded rain data
 rain<-read_xlsx("SUD Weather Station.xlsx", sheet = 3)
 
-#simple plot for weather (average daily temp)
-###bat activity month column 1-12, rain has month column
-
 ```
 
 ```{r}
@@ -61,17 +59,8 @@ weather <- weather %>%
          AvgWind='Wind Speed Avg (high) (m/S)',
          MinWind='Wind Speed Min (low) (m/s)')
 
-#variable with date, wind cols and temp cols
-#Daily_Weather<-DailyTemp %>% 
 
-#
-rain %>% 
-  mutate(Date = date(Timestamp)) %>% 
-  mutate(year = year(Date)) %>% 
-  group_by(year) %>% 
-  summarize(dates = length(unique(Date))) %>% 
-  View
-
+#Create 'Date' variable 
 hourly<-hourly %>% 
   mutate(Date= date(Timestamp)) 
 
@@ -85,14 +74,8 @@ daily_rainfall<-hourly %>%
   mutate(mm_hr = total_rainfall / total_hours) %>% 
   mutate(mm_predicted = mm_hr * 24) 
 
-#rainfall monthly for each year
-#hourly<-hourly %>% 
-#  mutate(Month= month(Timestamp)) 
 
-#rainfall yearly
-#hourly<-hourly %>% 
-#  mutate(Year= year(Timestamp))
-
+#get the rainfall for the year
 yearly_rainfall <- daily_rainfall  %>% 
   drop_na( Year ) %>% 
   group_by(Year) %>%
@@ -105,6 +88,8 @@ monthly_rainfall<-daily_rainfall %>%
   summarise(rain_intensity= sum(total_rainfall)/sum(total_hours)) 
 View(monthly_rainfall)
 
+#create 'month' and 'year' column
+#create 'df' 
 df <- bats %>% 
   mutate(Month= month(DATE)) %>% 
   mutate(Year= year(DATE)) %>% 
@@ -112,37 +97,26 @@ df <- bats %>%
   tally() %>%
   ungroup()
 
+#combine 'df' and 'monthly_rainfall' to create plot 
 df <- left_join(df, monthly_rainfall, by=c('Month', 'Year'))
  
-###
-df %>% 
+###filter out 2017 because there isn't enough data to show anything significant
+df<-df %>% 
   filter(Year>2017) 
+
+###filter out 2017 and 2022 because there isn't enough data to show anything significant
+monthly_rainfall<-monthly_rainfall%>% 
+  filter(Year>2017,Year<2022) 
 #plot monthly rainfall 
-ggplot(data = monthly_rainfall, aes(x=Month, y=rain_intensity, fill=Year))+
+#name plot 'm_rainfall' to graph it using plotly
+m_rainfall<-ggplot(data = monthly_rainfall, aes(x=Month, y=rain_intensity, fill=Year))+
   geom_area()+
   labs(title='Monthly Rainfall by Year', caption = 'Sewanee Bat Study. DataLab 2022', y='Total Rain Intensity (mm/hr)')+
   facet_wrap(~Year)+
    theme( legend.position = "none" ) +
   scale_x_continuous(breaks = 1:12)
 
-###calculate the total rain for the year
-#group by day
-#Get the average rain intensity for the day 
-#Multiply the average by the numb of sec in a day
-#That gives me daily rainfall and It can be summed up for monthly, yearly
-
-### do i need to mutate the date variable to get the day from it? total rain fall df has all the rain for each day summarized already 
-
-rainfall <- rainfall %>% 
-  mutate(Day= day(Date)) %>% 
-  group_by(Day) %>% 
-  summarise(total_rainfall=mean(total_rainfall*86400))
-
-###not sure if i did this correctly...###
-
-
-
-
+ggplotly(m_rainfall, hovertemplate = paste())  
 ```
 
 ```{r}
@@ -187,20 +161,19 @@ df.2<-Fahrenheit %>%
             MinTemp_f = mean(`MinTemp_f`))
 
 drop_na(df.2)
-
+###filter out 2017 and 2022 because there isn't enough data to show anything significant
 df.2<-df.2%>% 
   filter(Year>2017, Year<2022)
 #plot max, min, avg temp 
-ggplot(data = df.2, aes(x=Month, ymin=MinTemp_f, ymax=MaxTemp_f, y=AvgTemp_f))+
+#name plot 'temps' to graph it using plotly
+temps<-ggplot(data = df.2, aes(x=Month, ymin=MinTemp_f, ymax=MaxTemp_f, y=AvgTemp_f))+
   geom_ribbon(fill = "lightpink")+
   geom_line(color="red")+
   labs(title = 'Temperature ', subtitle = 'Maximum, Minimum, and Average', caption = 'Sewanee Bat Study. DataLab 2022', y='Temperature (°F)')+
   facet_wrap(~Year)+
   scale_x_continuous(breaks = 1:12)
   
-  
-
-  
+ggplotly(temps, hovertemplate = paste())   
 
 ```
 
@@ -222,8 +195,9 @@ drop_na(df.3)
 df.3<-df.3%>% 
   filter(Year>2017, Year<2022) 
 
-#plot wind ?intensity? 
-ggplot(data = df.3, aes(x=Month, ymin=MinWind, ymax=MaxWind, y=AvgWind))+
+#plot wind intensity? 
+#name plot 'w_intensity' to graph it using plotly
+w_intensity<-ggplot(data = df.3, aes(x=Month, ymin=MinWind, ymax=MaxWind, y=AvgWind))+
   geom_ribbon(fill = "gray")+
   geom_line(color="darkgray")+
   labs(title='Monthly Wind Intensity', subtitle = 'By year', caption= 'Sewanee Bat Study. DataLab 2022',y='Total Wind Speed (m/s)')+
@@ -231,32 +205,25 @@ ggplot(data = df.3, aes(x=Month, ymin=MinWind, ymax=MaxWind, y=AvgWind))+
    theme( legend.position = "none" ) +
   scale_x_continuous(breaks = 1:12)
 
+ggplotly(w_intensity, hovertemplate = paste()) 
+
 ```
 
 ```{r}
 #overall temp. trends across the years on one graph
 #just the average
-
+library(plotly)
 #mean of temp
 yearly_rainfall<-yearly_rainfall%>% 
   filter(Year>2017, Year<2022)
 
-ggplot(data=df.2, aes(x=Month, y=AvgTemp_f, group=Year, color=Year))+
+#name plot 'temp_graph' to graph it using plotly
+temp_graph<-ggplot(data=df.2, aes(x=Month, y=AvgTemp_f, group=Year, color=Year))+
   geom_line()+
   labs(title = 'Overall Averages for Temperature ', caption = 'Sewanee Bat Study. DataLab 2022', y='Temperature (°F)')+
   scale_x_continuous(breaks = 1:12)
 
-
-```
-
-```{r}
-#plot yearly rainfall
-
-ggplot(data = yearly_rainfall, aes(x=Year, y=yearly_rainfall, fill=Year))+
-  geom_col()+
-  theme( legend.position = "none" ) +
-  labs(title='Overall Rainfall', caption = 'Sewanee Bat Study. DataLab 2022', y='Total Rainfall (mm)')
-
+ggplotly(temp_graph, hovertemplate = paste())  
 ```
 
 ```{r}
@@ -289,12 +256,12 @@ bats.time <- bats.time %>%
 bats.time <- unique(bats.time)
 
 
-#this is just the plot, its copied almost exactly below so we could put it inside of an object to be used in the ggplotly function.
-
+###filter out 2017 and 2022 because there isn't enough data to show anything significant
 bats.time<-bats.time%>% 
   filter(year>2017, year<2022)
 
-ggplot(data=bats.time,
+#name plot 'bats.time.2' to graph it using plotly
+bats.time.2<-ggplot(data=bats.time,
        aes(x=monthN,
            y=rel_freq,
            color=AUTO.ID) )+
@@ -305,18 +272,81 @@ ggplot(data=bats.time,
        x = 'Year', y = 'Number of Calls')+
     scale_x_continuous(breaks = 1:12)
 
-longterm_graph <- ggplot(data=bats.time, 
-                         aes(x=monthN,
-                             y=rel_freq, 
-                             color=AUTO.ID) )+
-  geom_line()+
-  labs(title = 'Number of Total Calls Per Species',
-       subtitle = "From 2017-2021",
-       x = 'Year', y = 'Number of Calls')
-# using hovertemplate allows us to zoom into the graph
-ggplotly(longterm_graph, hovertemplate = paste())      
+#Using plotly to create a hover function
+ggplotly(bats.time.2, hovertemplate = paste())  
+
 ```
 
+```{r}
 
-
-
+# ####graphs for dashboard####
+# output$monthly.plot <- renderPlot({
+#     ggplot() +
+#       labs(title="Seasonal Bat Activity",
+#            x="Month", y="Relative Frequency",
+#            caption="Sewanee Bat Study, DataLab 2022")
+#  
+# })
+# 
+# #rain plot
+# m_rainfall<-ggplot(data = monthly_rainfall, aes(x=Month, y=rain_intensity, fill=Year))+
+#   geom_area()+
+#   labs(title='Monthly Rainfall by Year', caption = 'Sewanee Bat Study. DataLab 2022', y='Total Rain Intensity (mm/hr)')+
+#   facet_wrap(~Year)+
+#    theme( legend.position = "none" ) +
+#   scale_x_continuous(breaks = 1:12)
+# 
+# #Using plotly to create a hover function
+# ggplotly(m_rainfall, hovertemplate = paste())  
+# 
+# 
+# #wind plot
+# 
+# w_intensity<-ggplot(data = df.3, aes(x=Month, ymin=MinWind, ymax=MaxWind, y=AvgWind))+
+#   geom_ribbon(fill = "gray")+
+#   geom_line(color="darkgray")+
+#   labs(title='Monthly Wind Intensity', subtitle = 'By year', caption= 'Sewanee Bat Study. DataLab 2022',y='Total Wind Speed (m/s)')+
+#   facet_wrap(~Year)+
+#    theme( legend.position = "none" ) +
+#   scale_x_continuous(breaks = 1:12)
+# 
+# #Using plotly to create a hover function
+# ggplotly(w_intensity, hovertemplate = paste())
+# 
+# ########Temp. plots#####
+# ##Plot Max, Min, Avg temperature 
+# 
+# temps<-ggplot(data = df.2, aes(x=Month, ymin=MinTemp_f, ymax=MaxTemp_f, y=AvgTemp_f))+
+#   geom_ribbon(fill = "lightpink")+
+#   geom_line(color="red")+
+#   labs(title = 'Temperature ', subtitle = 'Maximum, Minimum, and Average', caption = 'Sewanee Bat Study. DataLab 2022', y='Temperature (°F)')+
+#   facet_wrap(~Year)+
+#   scale_x_continuous(breaks = 1:12)
+# 
+# #Using plotly to create a hover function  
+# ggplotly(temps, hovertemplate = paste())   
+# 
+# ###Species 2018-2022###
+# bats.time.2<-ggplot(data=bats.time,
+#        aes(x=monthN,
+#            y=rel_freq,
+#            color=AUTO.ID) )+
+#   geom_line()+
+#   facet_wrap(~year)+
+#   labs(title = 'Number of Total Calls Per Species',
+#        subtitle = "From 2017-2021",
+#        x = 'Year', y = 'Number of Calls')+
+#     scale_x_continuous(breaks = 1:12)
+# #Using plotly to create a hover function
+# ggplotly(bats.time.2, hovertemplate = paste())
+# 
+# ########Graphs for long term tab#########
+# #Average temperature for all years
+# temp_graph<-ggplot(data=df.2, aes(x=Month, y=AvgTemp_f, group=Year, color=Year))+
+#   geom_line()+
+#   labs(title = 'Overall Averages for Temperature ', caption = 'Sewanee Bat Study. DataLab 2022', y='Temperature (°F)')+
+#   scale_x_continuous(breaks = 1:12)
+# 
+# #Using plotly to create a hover function
+# ggplotly(temp_graph, hovertemplate = paste())  
+```
