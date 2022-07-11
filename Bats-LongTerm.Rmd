@@ -42,7 +42,7 @@ cave_ob <- bats %>%
 
 ```{r}
 # to make this graph as accurate as possible, we put the proportion of CO bats in december over total NCO bats over time, and then vice versa to graph
-cave_ob <- test %>% 
+cave_ob <- cave_ob %>% 
   group_by(monthN, `cave obligate?`, year) %>%
   summarize(prop_bat = n()/tot_bat) %>% 
   filter(monthN == 12)
@@ -87,8 +87,8 @@ selectedSpecies <- c("CORRAF","EPTFUS","LASBOR")
 selectedGroup <- 'species_group'
 selectedSpecies <- c('EPTFUS.LASNOC')
 
-sekectedGroup <- 'Cave obligate'
-setectedSpecies <- 'Dependent'
+selectedGroup <- 'cave obligate?'
+selectedSpecies <- 'FALSE'
 
 #use unique() to use all years, others for specific or single years
   selectedYears <- unique(bats$year)
@@ -106,17 +106,18 @@ setectedSpecies <- 'Dependent'
 ```{r}
 # species call counts by year -----
 
-bats.sub %>% names
+
 
 # Filter based on inputs
 bats.sub <- bats %>% 
   filter( year %in% selectedYears, 
           !grepl('NoID',AUTO.ID,ignore.case=TRUE) )
 
+
 # Now prep by selected group
 if(selectedGroup == 'species'){ bats.sub <- bats.sub %>% mutate(groupby = AUTO.ID) }
 if(selectedGroup == 'species_group'){ bats.sub <- bats.sub %>% mutate(groupby = species_group) }
-if(selectedGroup == 'cave_obligate'){ bats.sub <- bats.sub %>% mutate(groupby = `cave obligate?`) }
+if(selectedGroup == 'cave obligate?'){ bats.sub <- bats.sub %>% mutate(groupby = `cave obligate?`) }
 
 bats.sub <- bats.sub %>% 
   filter(groupby %in% selectedSpecies)
@@ -371,4 +372,3 @@ bats.sub <- distinct(bats.sub)
 
 
 ```
-
