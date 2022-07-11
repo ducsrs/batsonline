@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 # basic read -----
-source('dataRead.R')
+source('dataRead-bats.R')
 bats <- bats %>% 
   rename( siteID = sensor) %>% 
   select(-LATITUDE,-LONGITUDE)
@@ -205,4 +205,65 @@ if(wrapVar == 'none'){
   sensor.plot
 }
 ```
+
+
+
+
+
+# DASHBOARD PREP ROUND 2:
+
+## Sampling Activity
+
+```{r}
+sampling.granularity <- 'month'
+sampling.style <- 'line'
+```
+
+```{r}
+    if(sampling.granularity == 'year'){
+      sensorDates <- sensorDates %>% mutate( div=year(DATE) )
+    } else if(sampling.granularity == 'month'){
+      sensorDates <- sensorDates %>% 
+        mutate( div=as.Date(paste(year(DATE),month(DATE),1,sep='-')) )
+    }else if(sampling.granularity == 'day'){
+      sensorDates <- sensorDates %>% mutate( div=DATE )
+    }
+    ```
+
+```{r}
+    sampling.days <- sensorDates %>% 
+      group_by(div) %>% 
+      summarize( nSensors = n() )
+    ```
+
+```{r}
+    sample.plot <- ggplot( sampling.days, aes(x=div, y=nSensors) )
+    
+    if(sampling.style == 'line'){
+      sample.plot <- sample.plot + geom_line()
+    }
+    if(sampling.style == 'points'){
+      sample.plot <- sample.plot + geom_point(alpha=0.4)
+    }
+    
+    sample.plot +
+      labs(title="Sampling Activity",
+           x=sampling.granularity, y="N Sensors",
+           caption="Sewanee Bat Study, DataLab 2022")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

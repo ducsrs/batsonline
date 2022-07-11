@@ -14,7 +14,7 @@ library(ggthemes)
 #--BATS--######################################################################
 
 # read bat acoustic data -----
-bats <- readRDS('bats.RData')
+bats <- readRDS('../bats.RData')
 
 # calculate new vars -----
 bats <- bats %>% 
@@ -23,7 +23,8 @@ bats <- bats %>%
          month = month.abb[monthN],
          hour = hour(TIME),
          siteID = paste(COMPARTMENT,SITE, sep='_'),
-         AUTO.ID = gsub("CORTOW", "CORRAF", AUTO.ID))
+         AUTO.ID = gsub("CORTOW", "CORRAF", AUTO.ID),
+         AUTO.ID = ifelse(grepl('noID',AUTO.ID,ignore.case=TRUE),'no.ID',AUTO.ID) )
 # Any bat listed as CORTOW should be listed as CORRAF (Amy text)
 
 # cave status column -----
@@ -46,7 +47,7 @@ bats <- bats %>%
 #--SENSORS--###################################################################
 
 # read sensor site and date data -----
-sensors <- read_csv('sensorCSdates.csv', show_col_types=FALSE) 
+sensors <- read_csv('../sensorCSdates.csv', show_col_types=FALSE) 
 sensors <- sensors %>% 
   mutate( siteID = gsub('-','_',siteID),
           LONGITUDE = -abs(LONGITUDE), 
@@ -77,14 +78,14 @@ rm(sns,temp,DATE,i,var)
 
 #--SPECIES--###################################################################
 
-batspecies <- read_excel("BatSpecies.xlsx")
+batspecies <- read_excel("../BatSpecies.xlsx")
 
 
 
 #--WEATHER--###################################################################
 
 # daily weather data -----
-weather <- read_xlsx("SUD Weather Station.xlsx") %>%
+weather <- read_xlsx("../SUD Weather Station.xlsx") %>%
   dplyr::rename(DATE = "Timestamp*",
                 AvgTemp='Air temp Avg (C)',
                 Highest_Temp_Time='Time Air Temp Max',
@@ -95,14 +96,14 @@ weather <- read_xlsx("SUD Weather Station.xlsx") %>%
                 MinWind='Wind Speed Min (low) (m/s)')
 
 # hourly weather data -----
-hourly <- read_xlsx("SUD Weather Station.xlsx", sheet=2) %>% 
+hourly <- read_xlsx("../SUD Weather Station.xlsx", sheet=2) %>% 
   mutate( DATE=date(Timestamp),
           monthN=month(Timestamp),
           month = month.abb[monthN],
           year=year(Timestamp) )
 
 # recorded rain data -----
-rain <- read_xlsx("SUD Weather Station.xlsx", sheet = 3)
+rain <- read_xlsx("../SUD Weather Station.xlsx", sheet = 3)
 
 
 
