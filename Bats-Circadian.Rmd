@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 # basic read -----
-source('dataRead.R')
+source('dataRead-bats.R')
 bats <- bats %>% 
   rename( siteID = sensor) %>% 
   select(-LATITUDE,-LONGITUDE)

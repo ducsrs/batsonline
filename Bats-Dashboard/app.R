@@ -12,12 +12,10 @@
 library(shiny)
 library(shinydashboard)
 
-library(tidyverse)
-library(readxl)
-library(lubridate)
-library(ggthemes)
+source('../dataRead.R')
 
 grouping.ops <- c('species','species group','cave dependency')
+weather.ops <- c('rain','temperature','wind')
 
 #--UI--########################################################################
 ui <- dashboardPage(
@@ -55,7 +53,7 @@ ui <- dashboardPage(
       # year filter ----
       selectInput(inputId = "year", 
                   label = "Select year(s):", 
-                  choices = c(2017:2022),
+                  choices = c( min(bats$year):max(bats$year) ),
                   multiple = TRUE 
       ),#end year multiple select
       
@@ -69,7 +67,7 @@ ui <- dashboardPage(
       # compartment filter -----
       #selectInput(inputId = "compartment", 
       #            label = "Select compartment(s):", 
-      #            choices = c(1:16),
+      #            choices = unique(bats$COMPARTMENT),
       #            multiple = TRUE 
       #)#end compartment multiple select
       
@@ -205,7 +203,7 @@ ui <- dashboardPage(
                              #uiOutput("yearly.group.UI"),
                              checkboxGroupInput(inputId="yearly.weather",
                                                 label="Weather display:",
-                                                choices=c('rain','temperature','wind')
+                                                choices=weather.ops
                              ),#end weather check boxes
                              radioButtons(inputId="yearly.wrapVar", 
                                           label="Wrap facets by:",
@@ -253,7 +251,7 @@ ui <- dashboardPage(
                              #uiOutput("monthly.group.UI"),
                              checkboxGroupInput(inputId="monthly.weather",
                                                 label="Weather display:",
-                                                choices=c('rain','temperature','wind')
+                                                choices=weather.ops
                              ),#end weather check boxes
                              radioButtons(inputId="monthly.wrapVar", 
                                           label="Wrap facets by:",
@@ -507,12 +505,12 @@ server <- function(input, output) {
     switch(input$grouping,
            "species"=selectInput(inputId="group", 
                                  label="Select species:",
-                                 choices = c('species'), 
+                                 choices = sort(unique(bats$AUTO.ID)), 
                                  multiple = TRUE
            ),#end species grouping UI
            "species group"=selectInput(inputId="group", 
                                        label="Select species group(s):",
-                                       choices = c('species'), 
+                                       choices = sort(unique(bats$species_group)), 
                                        multiple = TRUE
            ),#end species group grouping UI
            "cave dependency"=selectInput(inputId="group", 
@@ -650,7 +648,17 @@ server <- function(input, output) {
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   rv <- reactiveValues()
   observe({
-    #bats.sub <- bats %>% filter()
+    # standard year filter 
+    bats.sub <- bats %>% 
+      filter( year %in% input$year )
+    # grouping filter
+    if( input$grouping == grouping.ops[1] ){ 
+      bats.sub <- bats.sub %>% filter( AUTO.ID %in% input$group )
+    } else if( input$grouping == grouping.ops[2] ){ 
+      bats.sub <- bats.sub %>% filter( species_group %in% input$group )
+    } else if( input$grouping == grouping.ops[3] ){ 
+      bats.sub <- bats.sub %>% filter( obligate %in% input$group )
+    }
   })
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
@@ -714,10 +722,34 @@ server <- function(input, output) {
   # Sampling Activity plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$sampling.plot <- renderPlot({
-    ggplot() +
+    
+    if(input$sampling.granularity == 'year'){
+      sensorDates <- sensorDates %>% mutate( div=year(DATE) )
+    } else if(input$sampling.granularity == 'month'){
+      sensorDates <- sensorDates %>% 
+        mutate( div=as.Date(paste(year(DATE),month(DATE),1,sep='-')) )
+    } else if(input$sampling.granularity == 'day'){
+      sensorDates <- sensorDates %>% mutate( div=DATE )
+    }
+    
+    sampling.days <- sensorDates %>% 
+      group_by(div) %>% 
+      summarize( nSensors = length(unique(siteID)) )
+    
+    sample.plot <- ggplot( sampling.days, aes(x=div, y=nSensors) )
+    
+    if(input$sampling.style == 'line'){
+      sample.plot <- sample.plot + geom_line()
+    }
+    if(input$sampling.style == 'points'){
+      sample.plot <- sample.plot + geom_point(alpha=0.4)
+    }
+    
+    sample.plot +
       labs(title="Sampling Activity",
-           x="year/date", y="N Sensors",
+           x=input$sampling.granularity, y="N Sensors",
            caption="Sewanee Bat Study, DataLab 2022")
+    
   })#end sampling plot ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
