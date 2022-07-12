@@ -46,6 +46,7 @@ bats.per <- bats.per %>%
             perc = prop*100)
 
 bats.per <- distinct(bats.per)
+cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#9200bc")
 
 
 diversity_graph <- ggplot(data = bats.per)+
@@ -53,7 +54,13 @@ diversity_graph <- ggplot(data = bats.per)+
                y = perc,
                fill = AUTO.ID, 
                text = paste("Percentage:",round(prop*100, 1),
-                            "Species:", Common)))
+                            "Species:", Common)))+
+  scale_fill_manual(values = cbPalette)+
+  labs(title = 'Diversity Trends of Bat Species',
+       subtitle = 'Percentages of Every Year since 2017',
+       x = 'Year',
+       y = 'Percent of Total Recordings')
+  
 
 
 ggplotly(diversity_graph, tooltip = c("fill", "text"))

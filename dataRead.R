@@ -28,11 +28,13 @@ bats <- bats %>%
 # Any bat listed as CORTOW should be listed as CORRAF (Amy text)
 
 # cave status column -----
-cave_obligate = c('PERSUB','MYOLEI','MYOAUS','MYOLUC','MYOSOD','MYOGRI','MYOSEP')
-non_cave_obligate = c('LASBOR','NYCHUM','EPTFUS','LASNOC','LASCIN','CORRAF')
+cave_obligate = c('MYOLEI','MYOAUS','MYOLUC','MYOSOD','MYOGRI','MYOSEP')
+seasonal_cave_obligate = c('PERSUB',"EPTFUS", "CORRAF")
+non_cave_obligate = c('LASBOR','NYCHUM','LASNOC','LASCIN')
 bats <- bats %>%
-  mutate( obligate = ifelse(AUTO.ID %in% cave_obligate, TRUE, NA),
-          obligate = ifelse(AUTO.ID %in% non_cave_obligate, FALSE, obligate) )
+  mutate( obligate = ifelse(AUTO.ID %in% cave_obligate, "cave obligate", NA),
+          obligate = ifelse(AUTO.ID %in% non_cave_obligate, "not cave obligate", obligate),
+          obligate = ifelse(AUTO.ID %in% seasonal_cave_obligate, "seasonal cave obligate", obligate))
 
 # species group column -----
 EPTFUS.LASNOC = c("EPTFUS", "LASNOC")
@@ -124,3 +126,4 @@ bats<- left_join(bats,batspecies, by="AUTO.ID")
 # weather? -----
 
 # join bats and management data -----
+

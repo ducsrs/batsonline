@@ -87,8 +87,8 @@ selectedSpecies <- c("CORRAF","EPTFUS","LASBOR")
 selectedGroup <- 'species_group'
 selectedSpecies <- c('EPTFUS.LASNOC')
 
-selectedGroup <- 'cave obligate?'
-selectedSpecies <- 'FALSE'
+selectedGroup <- 'obligate'
+selectedSpecies <- non_cave_obligate
 
 #use unique() to use all years, others for specific or single years
   selectedYears <- unique(bats$year)
@@ -117,7 +117,7 @@ bats.sub <- bats %>%
 # Now prep by selected group
 if(selectedGroup == 'species'){ bats.sub <- bats.sub %>% mutate(groupby = AUTO.ID) }
 if(selectedGroup == 'species_group'){ bats.sub <- bats.sub %>% mutate(groupby = species_group) }
-if(selectedGroup == 'cave obligate?'){ bats.sub <- bats.sub %>% mutate(groupby = `cave obligate?`) }
+if(selectedGroup == 'obligate'){ bats.sub <- bats.sub %>% mutate(groupby = obligate) }
 
 bats.sub <- bats.sub %>% 
   filter(groupby %in% selectedSpecies)
@@ -127,23 +127,25 @@ bats.sub <- bats.sub %>%
 # the mutate nsensors is so that we can account for survey effort
 bats.time <- bats.sub %>%
   filter(! AUTO.ID %in% No.ID, year < 2022) %>%
-  group_by(year) %>%
+  group_by(year, Common) %>%
   mutate(nsensors = length(unique(siteID))) 
 
 # another code segment to utilize another group_by, this time so i can see the relative frequency of the species per year
 bats.time <- bats.time %>% 
-  group_by(year, groupby) %>% 
+  group_by(year, groupby, Common) %>% 
   summarize(count = n(),
             rel_freq = count/nsensors)
 
 bats.time <- unique(bats.time)
 
 #this is just the plot, its copied almost exactly below so we could put it inside of an object to be used in the ggplotly function.
+cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#133139")
 ggplot(data=bats.time,
        aes(x=year,
            y=rel_freq,
-           color=groupby) )+
-  geom_line()+
+           color=groupby,
+           text = paste("Species:", Common)))+
+  geom_line() +
   labs(title = 'Number of Total Calls Per Species',
        subtitle = "From 2017-2021",
        x = 'Year', y = 'Number of Calls')
@@ -151,11 +153,14 @@ ggplot(data=bats.time,
 longterm_graph <- ggplot(data=bats.time, 
                          aes(x=year,
                              y=rel_freq, 
-                             color=groupby) )+
+                             color=groupby,
+                             text = paste("Species:", Common))) +
   geom_line()+
+  scale_fill_manual(values = cbPalette)+
   labs(title = 'Number of Total Calls Per Species',
        subtitle = "From 2017-2021",
        x = 'Year', y = 'Number of Calls')
+  
 
 # using hovertemplate allows us to zoom into the graph
 

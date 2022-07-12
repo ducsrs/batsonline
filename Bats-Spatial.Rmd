@@ -60,7 +60,7 @@ compart<-bats %>%
                                            "C48",
                                            "C50",
                                            "C53")))
-  
+
 #plot species by each compartment 
 ggplot(data=compart %>% filter(! AUTO.ID %in% c("NoId", "NoID", "Noise")), aes(x=AUTO.ID, y=n, fill=AUTO.ID))+
   geom_col()+
