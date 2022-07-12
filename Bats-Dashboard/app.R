@@ -54,14 +54,16 @@ ui <- dashboardPage(
       selectInput(inputId = "year", 
                   label = "Select year(s):", 
                   choices = c( min(bats$year):max(bats$year) ),
-                  multiple = TRUE 
+                  multiple = TRUE,
+                  selected = c( min(bats$year):max(bats$year) )
       ),#end year multiple select
       
       # month filter -----
       selectInput(inputId = "month", 
                   label = "Select month(s):", 
                   choices = month.abb[1:12],
-                  multiple = TRUE 
+                  multiple = TRUE, 
+                  selected = month.abb[1:12]
       )#end month multiple select
       
       # compartment filter -----
@@ -492,17 +494,19 @@ server <- function(input, output) {
     switch(input$grouping,
            "species"=selectInput(inputId="group", 
                                  label="Select species:",
-                                 choices = sort(unique(bats$AUTO.ID)), 
-                                 multiple = TRUE
+                                 choices = , 
+                                 multiple = TRUE,
+                                 selected = sort(unique(bats$AUTO.ID))
            ),#end species grouping UI
            "species group"=selectInput(inputId="group", 
                                        label="Select species group(s):",
                                        choices = sort(unique(bats$species_group)), 
-                                       multiple = TRUE
+                                       multiple = TRUE,
+                                       selected = sort(unique(bats$species_group))
            ),#end species group grouping UI
            "cave dependency"=selectInput(inputId="group", 
                                          label="Select cave status:",
-                                         choices = c('dependent','not dependent'), 
+                                         choices = sort(unique(bats$obligate)), 
                                          multiple = TRUE
            )#end cave dependency grouping UI
     )#end grouping switch
@@ -635,6 +639,8 @@ server <- function(input, output) {
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   rv <- reactiveValues()
   observe({
+    
+    # main data subset -----
     # standard year filter 
     bats.sub <- bats %>% 
       filter( year %in% input$year )
@@ -646,6 +652,10 @@ server <- function(input, output) {
     } else if( input$grouping == grouping.ops[3] ){ 
       bats.sub <- bats.sub %>% filter( obligate %in% input$group )
     }
+    rv$bats.sub <- bats.sub
+    # monitor accuracy data -----
+    
+    
   })
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
@@ -723,10 +733,10 @@ server <- function(input, output) {
     # summarize number of sites -----
     sampling.days <- sensorDates %>% 
       group_by(div) %>% 
-      summarize( nSites = length(unique(siteID)) )
+      summarize( trapNights = n() )
     
     # create base plot -----
-    sample.plot <- ggplot( sampling.days, aes(x=div, y=nSites) )
+    sample.plot <- ggplot( sampling.days, aes(x=div, y=trapNights) )
     
     # add plot geoms based on plot style input -----
     if(input$sampling.style == 'line'){
@@ -739,7 +749,7 @@ server <- function(input, output) {
     # make plot with labels -----
     sample.plot +
       labs(title="Sampling Activity",
-           x=input$sampling.granularity, y="N Sensors",
+           x=input$sampling.granularity, y="Sampling nights",
            caption="Sewanee Bat Study, DataLab 2022")
     
   })#end sampling plot ---
@@ -752,16 +762,14 @@ server <- function(input, output) {
     
     # set wrapV by the input wrap var -----
     if(input$sensor.wrapVar == 'year'){
-      bats.monitor <- bats.sub %>% mutate( wrapV=year)
+      bats.monitor <- rv$bats.sub %>% mutate( wrapV=year)
     } else if(input$sensor.wrapVar == 'month'){
-      bats.monitor <- bats.sub %>% mutate( wrapV=month)
-    } else if(input$sensor.wrapVar == 'none'){
-      bats.monitor <- bats.sub
-    }
+      bats.monitor <- rv$bats.sub %>% mutate( wrapV=month)
+    } 
     
     # summarize by appropriate groups -----
     if(input$sensor.wrapVar == 'none'){
-      bats.monitor <- bats.monitor %>% 
+      bats.monitor <- rv$bats.sub %>% 
         group_by(monitor) %>% 
         summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
                    unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
@@ -814,16 +822,15 @@ server <- function(input, output) {
     
     # set wrapV by the input wrap var -----
     if(input$sensor.wrapVar == 'year'){
-      bats.mic <- bats.sub %>% mutate( wrapV=year)
-    } else if(sensor.wrapVar == 'month'){
-      bats.mic <- bats.sub %>% mutate( wrapV=month)
-    } else if(input$sensor.wrapVar == 'none'){
-      bats.mic <- bats.sub
-    }
+      bats.mic <- rv$bats.sub %>% mutate( wrapV=year)
+    } else if(input$sensor.wrapVar == 'month'){
+      bats.mic <- rv$bats.sub %>% mutate( wrapV=month)
+    } 
     
     # summarize by appropriate groups -----
     if(input$sensor.wrapVar == 'none'){
-      bats.mic <- bats.mic %>% 
+      print(head(rv$bats.sub$mic))
+      bats.mic <- rv$bats.sub %>% 
         group_by(mic) %>% 
         summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
                    unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
