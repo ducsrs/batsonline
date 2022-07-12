@@ -109,25 +109,7 @@ ui <- dashboardPage(
                      white nose syndrome.",
                      hr(),
                      h2('Bats of Sewanee:'),
-                     "[summarize bat species]",
-                     hr(),
-                     h3('Long-Term Trends'),
-                     "[Explain Long-Term tab]",
-                     hr(),
-                     h3('Seasonal Trends'),
-                     "[Explain Seasonal tab]",
-                     hr(),
-                     h3('Circadian Trends'),
-                     "[Explain Circadian tab]",
-                     hr(),
-                     h3('Spatial Trends'),
-                     "[Explain Spatial tab]",
-                     hr(),
-                     h3('Diversity Trends'),
-                     "[Explain Diversity tab]",
-                     hr(),
-                     h3('Sampling Activity'),
-                     "[Explain Sampling tab]",
+                     "[summarize bat species]"
                 ),#end about box
                 
                 # tab summaries column -----
@@ -464,6 +446,11 @@ ui <- dashboardPage(
                                           label="Focus:",
                                           choices = c('Noise','No.ID'), 
                                           selected = 'Noise'
+                             ),#end focus selection
+                             radioButtons(inputId="sensor.wrapVar", 
+                                          label="Wrap facets by:",
+                                          choices = c('none','year','month'), 
+                                          selected = 'none'
                              )#end wrap var selection
                         ),#end graph controls box
                         
@@ -723,6 +710,7 @@ server <- function(input, output) {
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$sampling.plot <- renderPlot({
     
+    # group by granularity level -----
     if(input$sampling.granularity == 'year'){
       sensorDates <- sensorDates %>% mutate( div=year(DATE) )
     } else if(input$sampling.granularity == 'month'){
@@ -732,12 +720,15 @@ server <- function(input, output) {
       sensorDates <- sensorDates %>% mutate( div=DATE )
     }
     
+    # summarize number of sites -----
     sampling.days <- sensorDates %>% 
       group_by(div) %>% 
-      summarize( nSensors = length(unique(siteID)) )
+      summarize( nSites = length(unique(siteID)) )
     
-    sample.plot <- ggplot( sampling.days, aes(x=div, y=nSensors) )
+    # create base plot -----
+    sample.plot <- ggplot( sampling.days, aes(x=div, y=nSites) )
     
+    # add plot geoms based on plot style input -----
     if(input$sampling.style == 'line'){
       sample.plot <- sample.plot + geom_line()
     }
@@ -745,6 +736,7 @@ server <- function(input, output) {
       sample.plot <- sample.plot + geom_point(alpha=0.4)
     }
     
+    # make plot with labels -----
     sample.plot +
       labs(title="Sampling Activity",
            x=input$sampling.granularity, y="N Sensors",
@@ -757,10 +749,61 @@ server <- function(input, output) {
   # Sensor Accuracy plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$sensor.plot <- renderPlot({
-    ggplot() +
-      labs(title="Sensor Accuracy",
-           x="Sensor Serial", y="Accuracy",
+    
+    # set wrapV by the input wrap var -----
+    if(input$sensor.wrapVar == 'year'){
+      bats.monitor <- bats.sub %>% mutate( wrapV=year)
+    } else if(input$sensor.wrapVar == 'month'){
+      bats.monitor <- bats.sub %>% mutate( wrapV=month)
+    } else if(input$sensor.wrapVar == 'none'){
+      bats.monitor <- bats.sub
+    }
+    
+    # summarize by appropriate groups -----
+    if(input$sensor.wrapVar == 'none'){
+      bats.monitor <- bats.monitor %>% 
+        group_by(monitor) %>% 
+        summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
+                   unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
+                   noise = sum(as.numeric(grepl("Noise",AUTO.ID))),
+                   total = n() )
+    } else {
+      bats.monitor <- bats.monitor %>% 
+        group_by(monitor,wrapV) %>% 
+        summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
+                   unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
+                   noise = sum(as.numeric(grepl("Noise",AUTO.ID))),
+                   total = n() )
+    }
+    bats.monitor <- bats.monitor %>% mutate(p.unID=unID/total, p.noise=noise/total)
+    
+    # create base plots by plot focus -----
+    if(input$sensor.ob == 'Noise'){
+      monitor.p <- ggplot( bats.monitor, aes(x=monitor, y=p.noise, fill=-p.noise) )
+    } else {
+      monitor.p <- ggplot( bats.monitor, aes(x=monitor, y=p.unID, fill=-p.unID) )
+    }
+    
+    # add the column geom -----
+    monitor.p <- monitor.p +
+      geom_col() +
+      theme(legend.position='none') +
+      theme(axis.text.x = element_text(angle = 90))
+    
+    # facet wrap if appropriate -----
+    if(input$sensor.wrapVar != 'none'){
+      monitor.p <- monitor.p + facet_wrap(~wrapV)
+    }
+    
+    # make plot title -----
+    monitor.ttl <- paste("Monitor Detections:",input$sensor.ob)
+    
+    # make plot with labels -----
+    monitor.p +
+      labs(title=monitor.ttl,
+           x="Monitor Serial", y="Proportion",
            caption="Sewanee Bat Study, DataLab 2022")
+    
   })#end sensor plot ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
@@ -768,10 +811,61 @@ server <- function(input, output) {
   # Microphone Accuracy plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$mic.plot <- renderPlot({
-    ggplot() +
-      labs(title="Microphone Accuracy",
+    
+    # set wrapV by the input wrap var -----
+    if(input$sensor.wrapVar == 'year'){
+      bats.mic <- bats.sub %>% mutate( wrapV=year)
+    } else if(sensor.wrapVar == 'month'){
+      bats.mic <- bats.sub %>% mutate( wrapV=month)
+    } else if(input$sensor.wrapVar == 'none'){
+      bats.mic <- bats.sub
+    }
+    
+    # summarize by appropriate groups -----
+    if(input$sensor.wrapVar == 'none'){
+      bats.mic <- bats.mic %>% 
+        group_by(mic) %>% 
+        summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
+                   unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
+                   noise = sum(as.numeric(grepl("Noise",AUTO.ID))),
+                   total = n() )
+    } else {
+      bats.mic <- bats.mic %>% 
+        group_by(mic,wrapV) %>% 
+        summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
+                   unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
+                   noise = sum(as.numeric(grepl("Noise",AUTO.ID))),
+                   total = n() )
+    }
+    bats.mic <- bats.mic %>% mutate(p.unID=unID/total, p.noise=noise/total)
+    
+    # create base plots by plot focus -----
+    if(input$sensor.ob == 'Noise'){
+      mic.p <- ggplot( bats.mic, aes(x=mic, y=p.noise, fill=-p.noise) )
+    } else {
+      mic.p <- ggplot( bats.mic, aes(x=mic, y=p.unID, fill=-p.unID) )
+    }
+    
+    # add the column geom -----
+    mic.p <- mic.p +
+      geom_col() +
+      theme(legend.position='none') +
+      theme(axis.text.x = element_text(angle = 90))
+    
+    # facet wrap if appropriate -----
+    if(input$sensor.wrapVar != 'none'){
+      mic.p <- mic.p + facet_wrap(~wrapV)
+    }
+    
+    # make plot title -----
+    mic.ttl <- paste("Microphone Detections:",input$sensor.ob)
+    
+    # make plot with labels -----
+    mic.p +
+      labs(title=mic.ttl,
            x="Mic Serial", y="Accuracy",
            caption="Sewanee Bat Study, DataLab 2022")
+    
   })#end mic plot ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   

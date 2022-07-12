@@ -212,9 +212,17 @@ if(wrapVar == 'none'){
 
 # DASHBOARD PREP ROUND 2:
 
+
 ## Sampling Activity
 
 ```{r}
+selectedYears <- unique(bats$year)
+selectedComps <- unique(bats$COMPARTMENT)
+
+bats.sub <- bats %>% 
+  filter( year %in% selectedYears,
+          COMPARTMENT %in% selectedComps )
+
 sampling.granularity <- 'month'
 sampling.style <- 'line'
 ```
@@ -233,11 +241,11 @@ sampling.style <- 'line'
 ```{r}
     sampling.days <- sensorDates %>% 
       group_by(div) %>% 
-      summarize( nSensors = n() )
+      summarize( nSites = n() )
     ```
 
 ```{r}
-    sample.plot <- ggplot( sampling.days, aes(x=div, y=nSensors) )
+    sample.plot <- ggplot( sampling.days, aes(x=div, y=nSites) )
     
     if(sampling.style == 'line'){
       sample.plot <- sample.plot + geom_line()
@@ -248,22 +256,128 @@ sampling.style <- 'line'
     
     sample.plot +
       labs(title="Sampling Activity",
-           x=sampling.granularity, y="N Sensors",
+           x=sampling.granularity, y="N Sites",
            caption="Sewanee Bat Study, DataLab 2022")
+```
+
+
+## Sensor accuracy
+
+```{r}
+selectedYears <- unique(bats$year)
+selectedComps <- unique(bats$COMPARTMENT)
+
+bats.sub <- bats %>% 
+  filter( year %in% selectedYears,
+          COMPARTMENT %in% selectedComps )
+
+sensor.wrapVar <- 'year'
+sensor.ob <- 'Noise'
+```
+
+```{r}
+if(sensor.wrapVar == 'year'){
+  bats.monitor <- bats.sub %>% mutate( wrapV=year)
+}
+
+if(sensor.wrapVar == 'none'){
+  bats.monitor <- bats.sub %>% 
+      group_by(monitor) %>% 
+      summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
+                 unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
+                 noise = sum(as.numeric(grepl("Noise",AUTO.ID))),
+                 total = n(),
+                 p.unID = unID/total, 
+                 p.noise = noise/total )
+} else {
+  bats.monitor <- bats.monitor %>% 
+      group_by(monitor,wrapV) %>% 
+      summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
+                 unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
+                 noise = sum(as.numeric(grepl("Noise",AUTO.ID))),
+                 total = n(),
+                 p.unID = unID/total, 
+                 p.noise = noise/total )
+}
+```
+
+```{r}
+if(sensor.ob == 'Noise'){
+  monitor.p <- ggplot( bats.monitor, aes(x=monitor, y=p.noise, fill=-p.noise) )
+} else {
+  monitor.p <- ggplot( bats.monitor, aes(x=monitor, y=p.unID, fill=-p.unID) )
+}
+
+monitor.p <- monitor.p +
+  geom_col() +
+  theme(legend.position='none') +
+  theme(axis.text.x = element_text(angle = 90))
+
+if(sensor.wrapVar == 'none'){
+  monitor.p
+} else {
+  monitor.p + facet_wrap(~wrapV)
+}
 ```
 
 
 
 
+## Mic accuracy
 
+```{r}
+selectedYears <- unique(bats$year)
+selectedComps <- unique(bats$COMPARTMENT)
 
+bats.sub <- bats %>% 
+  filter( year %in% selectedYears,
+          COMPARTMENT %in% selectedComps )
 
+sensor.wrapVar <- 'year'
+sensor.ob <- 'Noise'
+```
 
+```{r}
+if(sensor.wrapVar == 'year'){
+  bats.mic <- bats.sub %>% mutate( wrapV=year)
+}
 
+if(sensor.wrapVar == 'none'){
+  bats.mic <- bats.sub %>% 
+      group_by(mic) %>% 
+      summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
+                 unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
+                 noise = sum(as.numeric(grepl("Noise",AUTO.ID))),
+                 total = n(),
+                 p.unID = unID/total, 
+                 p.noise = noise/total )
+} else {
+  bats.mic <- bats.mic %>% 
+      group_by(mic,wrapV) %>% 
+      summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
+                 unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
+                 noise = sum(as.numeric(grepl("Noise",AUTO.ID))),
+                 total = n(),
+                 p.unID = unID/total, 
+                 p.noise = noise/total )
+}
+```
 
+```{r}
+if(sensor.ob == 'Noise'){
+  mic.p <- ggplot( bats.mic, aes(x=mic, y=p.noise, fill=-p.noise) )
+} else {
+  mic.p <- ggplot( bats.mic, aes(x=mic, y=p.unID, fill=-p.unID) )
+}
 
+mic.p <- mic.p +
+  geom_col() +
+  theme(legend.position='none') +
+  theme(axis.text.x = element_text(angle = 90))
 
-
-
-
-
+if(sensor.wrapVar == 'none'){
+  mic.p
+} else {
+  mic.p + facet_wrap(~wrapV)
+}
+```
