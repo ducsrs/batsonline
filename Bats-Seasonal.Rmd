@@ -8,32 +8,17 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-library(tidyverse)
-library(lubridate)
-library(dplyr)
 library(plotly)
-bats <- readRDS('bats.RData')
 
+source('dataRead-bats.R')
 
 bats <- bats %>% 
-  mutate(year = year(DATE), 
-         monthN = month(DATE),
-         month = month.abb[monthN],
-         hour = hour(TIME) ) %>% 
-  filter(! AUTO.ID %in% c( "NoId", "NoID", "Noise" ))
-
-# Any bat listed as CORTOW should be listed as the secondary species
-bats <- bats %>% 
-  mutate( AUTO.ID = gsub("CORTOW", 
-                         unlist(strsplit(ALTERNATES, split=';', fixed=TRUE))[1],
-                         AUTO.ID) )
+  filter(! AUTO.ID %in% c("NoId","NoID","no.ID","Noise") )
 ```
 
 # Seasonal (monthly) Trends
 
 ```{r}
-
-
 library(readxl)
 #read in daily weather data
 weather <- read_xlsx("SUD Weather Station.xlsx")
@@ -350,3 +335,91 @@ ggplotly(bats.time.2, hovertemplate = paste())
 # #Using plotly to create a hover function
 # ggplotly(temp_graph, hovertemplate = paste())  
 ```
+
+
+
+
+
+# DASHBOARD PREP
+
+```{r}
+# Universal inputs (grouping, group, year, month)
+# monthly.weather (vector - rain, wind, temperature)
+# monthly.wrapVar (vector - none, year, management)
+
+# stand-in input variables -----
+input.grouping <- 'species'
+input.group <- c("CORRAF","EPTFUS","LASBOR")
+input.year <- c(2017:2022)
+input.month <- month.abb[1:12]
+# monthly.weather <- 'rain'
+monthly.wrapVar <- 'none'
+
+# colorblind palatte -----
+cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#133139")
+```
+
+```{r}
+# basic filter -----
+bats.sub <- bats %>% 
+  filter( year %in% input.year, month %in% input.month ) %>% 
+  rename( siteID = sensor )
+
+# set grouping var column -----
+if(input.grouping=='species'){ bats.sub <- bats.sub %>% mutate(group=AUTO.ID) }
+if(input.grouping=='species group'){ bats.sub<-bats.sub%>%mutate(group=species_group) }
+if(input.grouping=='cave dependency'){ bats.sub <- bats.sub %>% mutate(group=obligate) }
+
+# group filter -----
+bats.sub <- bats.sub %>% 
+  filter( group %in% input.group )
+```
+
+```{r}
+# set wrap var column -----
+if(monthly.wrapVar=='year'){ bats.mon <- bats.sub %>% mutate(wrapV=year) }
+if(monthly.wrapVar=='management'){ bats.mon <- bats.sub %>% mutate(wrapV=habitat) }
+
+# summarize by appropriate groups -----
+if(monthly.wrapVar == 'none'){
+  bats.mon <- bats.sub %>% 
+    group_by(monthN,month) %>% 
+    mutate( nSensors = length(unique(siteID)) )
+  bats.mon <- bats.mon %>% 
+    group_by(monthN,month,group) %>% 
+    summarize( count=n(), relFreq=count/nSensors )
+  bats.mon <- distinct(bats.mon)
+} else {
+  bats.mon <- bats.mon %>% 
+    group_by(monthN,month,wrapV) %>% 
+    mutate( nSensors = length(unique(siteID)) )
+  bats.mon <- bats.mon %>% 
+    group_by(monthN,month,wrapV,group) %>% 
+    summarize( count=n(), relFreq=count/nSensors )
+  bats.mon <- distinct(bats.mon)
+}
+```
+
+```{r}
+# make base plot -----
+monthly.p <- ggplot( bats.mon ) +
+  geom_line( aes(x=monthN, y=relFreq, color=group, text=paste("Group:",group)) ) +
+  scale_x_discrete(limits=month.abb[1:12]) +
+  scale_fill_manual(values = cbPalette) +
+  labs(title="Monthly Bat Activity",
+       x="Month", y ="Relative Frequency",
+       caption="Sewanee Bat Study, DataLab 2022")
+
+# wrap if appropriate -----
+if(monthly.wrapVar != 'none'){
+  monthly.p <- monthly.p + facet_wrap(~wrapV)
+}
+
+# plot with plotly ----
+ggplotly( monthly.p, hovertemplate=paste() )
+```
+
+
+
+
+

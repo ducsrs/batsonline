@@ -19,7 +19,7 @@ source('dataRead-sensorDates.R')
 # join bats and sensor site data -----
 bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
 
-No.ID = c("Noise", "NoId", "NoID")
+No.ID = c("Noise", "NoId", "NoID", "no.ID")
 
 library(readxl)
 batspecies <- read_excel("BatSpecies.xlsx")
@@ -65,9 +65,9 @@ Weighted by Proportion to Total Recordings",
 # theres a sharp dip in frequencies of both bats in 2020. interesting.
 ```
 
-Looking into making species group columns
+Looking into making species group columns (moved to dataRead-bats.R)
 
-```{r}
+```{r, EVAL=FALSE}
 EPTFUS.LASNOC = c("EPTFUS", "LASNOC")
 LASBOR.NYCHUM = c('LASBOR', "NYCHUM")
 bats <- bats %>% 
@@ -77,6 +77,11 @@ bats <- bats %>%
   
 ```
 
+
+
+
+
+# DASHBOARD PREP
 
 ```{r}
 # Possible input values
@@ -101,11 +106,8 @@ selectedSpecies <- non_cave_obligate
   #wrapVar <- 'none'
 ```
 
-
 ```{r}
 # species call counts by year -----
-
-
 
 # Filter based on inputs
 bats.sub <- bats %>% 
@@ -137,8 +139,10 @@ bats.time <- bats.time %>%
 
 bats.time <- unique(bats.time)
 
-#this is just the plot, its copied almost exactly below so we could put it inside of an object to be used in the ggplotly function.
+# colorblind palatte -----
 cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#133139")
+
+# see long-term plot -----
 ggplot(data=bats.time,
        aes(x=year,
            y=rel_freq,
@@ -149,6 +153,7 @@ ggplot(data=bats.time,
        subtitle = "From 2017-2021",
        x = 'Year', y = 'Number of Calls')
 
+# save long-term plot -----
 longterm_graph <- ggplot(data=bats.time, 
                          aes(x=year,
                              y=rel_freq, 
@@ -161,8 +166,7 @@ longterm_graph <- ggplot(data=bats.time,
        x = 'Year', y = 'Number of Calls')
   
 
-# using hovertemplate allows us to zoom into the graph
-
+# plotly using hovertemplate to zoom in on graph -----
 ggplotly(longterm_graph, hovertemplate = paste())
 
 
@@ -170,8 +174,89 @@ ggplotly(longterm_graph, hovertemplate = paste())
 ```
 
 
-This is experimental stuff
 
+
+
+# DASHBOARD PREP ROUND 2
+
+```{r}
+# Universal inputs (grouping, group, year, month)
+# yearly.weather (vector - rain, wind, temperature)
+# yearly.wrapVar (vector - none, management)
+
+# stand-in input variables -----
+input.grouping <- 'species'
+input.group <- c("CORRAF","EPTFUS","LASBOR")
+input.year <- c(2017:2022)
+input.month <- month.abb[1:12]
+yearly.wrapVar <- 'none'
+
+# colorblind palatte -----
+cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#133139")
+```
+
+```{r}
+# basic filter -----
+bats.sub <- bats %>% 
+  filter( year %in% input.year, month %in% input.month )
+
+# set grouping var column -----
+if(input.grouping=='species'){ bats.sub <- bats.sub %>% mutate(group=AUTO.ID) }
+if(input.grouping=='species group'){ bats.sub<-bats.sub%>%mutate(group=species_group) }
+if(input.grouping=='cave dependency'){ bats.sub <- bats.sub %>% mutate(group=obligate) }
+
+# group filter -----
+bats.sub <- bats.sub %>% 
+  filter( group %in% input.group )
+```
+
+```{r}
+# set wrap var column -----
+if(yearly.wrapVar=='management'){ bats.yr <- bats.sub %>% mutate(wrapV=habitat) }
+
+# summarize by appropriate groups -----
+if(yearly.wrapVar == 'none'){
+  bats.yr <- bats.sub %>% 
+    group_by(year) %>% 
+    mutate( nSensors = length(unique(siteID)) )
+  bats.yr <- bats.yr %>% 
+    group_by(year,group) %>% 
+    summarize( count=n(), relFreq=count/nSensors )
+  bats.yr <- distinct(bats.yr)
+} else {
+  bats.yr <- bats.yr %>% 
+    group_by(year,wrapV) %>% 
+    mutate( nSensors = length(unique(siteID)) )
+  bats.yr <- bats.yr %>% 
+    group_by(year,wrapV,group) %>% 
+    summarize( count=n(), relFreq=count/nSensors )
+  bats.yr <- distinct(bats.yr)
+}
+```
+
+```{r}
+# make base plot -----
+yearly.p <- ggplot( bats.yr ) +
+  geom_line( aes(x=year, y=relFreq, color=group, text=paste("Group:",group)) ) +
+  scale_fill_manual(values = cbPalette) +
+  labs(title="Yearly Bat Activity",
+       x="Year", y ="Relative Frequency",
+       caption="Sewanee Bat Study, DataLab 2022")
+
+# wrap if appropriate -----
+if(yearly.wrapVar != 'none'){
+  yearly.p <- yearly.p + facet_wrap(~wrapV)
+}
+
+# plot with plotly ----
+ggplotly( yearly.p, hovertemplate=paste() )
+```
+
+
+
+
+
+# Experimental stuff
 
 ```{r}
 # my goal is to group everything and then use summarize so that I can have the total frequency of the bats by species across months.
@@ -314,65 +399,6 @@ ggplot(data = myotis)+
        x = 'Time',
        y = 'Number of Recordings')+
   facet_wrap(~AUTO.ID)
-
-
-```
-
-```{r}
-
-selectedYears <- unique(bats$year)
-selectedComps <- unique(bats$COMPARTMENT)
-selectedSpecies <- unique(bats$AUTO.ID)
-
- wrapVar <- 'year'
-  #wrapVar <- 'month'
-  #wrapVar <- 'habitat'
-  #wrapVar <- 'none'
- 
- 
- 
-bats.sub <- bats %>% 
-  filter( year %in% selectedYears, 
-          COMPARTMENT %in% selectedComps,
-          AUTO.ID %in% selectedSpecies,
-          !grepl('NoID',AUTO.ID,ignore.case=TRUE) )
-
-if(wrapVar == 'year'){
-  bats.sub <- bats.sub %>% 
-    group_by(hour, year) %>% 
-    mutate( nSensors = length(unique(siteID)) )
-  bats.sub <- bats.sub %>% 
-    group_by(hour,year,AUTO.ID) %>% 
-    summarize( count = n(), relFreq = count/nSensors )
-}
-if(wrapVar == 'month') {
-  bats.sub <- bats.sub %>% 
-    group_by(hour, month) %>% 
-    mutate( nSensors = length(unique(siteID)),
-            month = factor(month, levels=month.abb[1:12]) )
-  bats.sub <- bats.sub %>% 
-    group_by(hour,month,AUTO.ID) %>% 
-    summarize( count = n(), relFreq = count/nSensors )
-}
-if(wrapVar == 'habitat'){
-  bats.sub <- bats.sub %>% 
-    group_by(hour, habitat) %>% 
-    mutate( nSensors = length(unique(siteID)) )
-  bats.sub <- bats.sub %>% 
-    group_by(hour,habitat,AUTO.ID) %>% 
-    summarize( count = n(), relFreq = count/nSensors )
-}
-if(wrapVar == 'none'){
-  bats.sub <- bats.sub %>% 
-    group_by(hour) %>% 
-    mutate( nSensors = length(unique(siteID)) )
-  bats.sub <- bats.sub %>% 
-    group_by(hour,AUTO.ID) %>% 
-    summarize( count = n(), relFreq = count/nSensors )
-}
-bats.sub <- distinct(bats.sub)
-
-
 
 
 ```
