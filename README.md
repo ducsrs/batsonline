@@ -1,8 +1,8 @@
 # Protecting the Bat Population
-Com”BAT”ing White-Nose Syndrome
+Com-BAT-ing Ecological Challenges
 
 ### Project Statement
-Bats are a vital part of ecosystems and have been on the decline due to one of the worst wildlife diseases in modern history, white nose syndrome. Sewanee Bat Study has collected years of data on the behavior and habitats of local cave-dwelling bat species. We are analyzing the data and creating a dashboard to help make better data-driven forest management decisions that will help control the spread of white nose syndrome.
+Bats are a vital part of ecosystems and some have been declining due to one of the worst wildlife diseases in modern history, Pseudogymnoascus destructans, more commonly known as white-nose syndrome. The Sewanee Bat Study has collected years of data on the behavior and habitats of local forest-dwelling bat species. We are analyzing the data and creating a dashboard to help make data-driven forest management decisions.
 
 
 ### Summary of Our Project
