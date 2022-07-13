@@ -11,8 +11,11 @@
 
 library(shiny)
 library(shinydashboard)
+library(plotly)
 
 source('../dataRead.R')
+
+bad <- c('no.ID','Noise')
 
 grouping.ops <- c('species','species group','cave dependency')
 species.ops <- sort(unique(bats$AUTO.ID))
@@ -22,6 +25,10 @@ cave.ops <- sort(unique(bats$obligate))
 weather.ops <- c('rain','temperature','wind')
 year.ops <- c( min(bats$year):max(bats$year) )
 month.ops <- month.abb[1:12]
+
+cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00", "#fed457", "#c2c527", 
+               "#9ae825", "#6f9c01", "#c5d5ea", "#d3ffe2", "#a2c2c6", "#087d93",
+               "#0c3660", "#133139")
 
 #--UI--########################################################################
 ui <- dashboardPage(
@@ -498,23 +505,23 @@ server <- function(input, output) {
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$group.UI <- renderUI({
     switch(input$grouping,
-           "species"=selectInput(inputId="group", 
-                                       label="Select species:",
-                                       choices = species.ops,
-                                       multiple = TRUE,
-                                       selected = species.ops
+           "species"=selectInput(inputId="group",
+                                 label="Select species:",
+                                 choices = species.ops,
+                                 multiple = TRUE,
+                                 selected = species.ops[-which(species.ops%in%bad)]
            ),#end species grouping UI
            "species group"=selectInput(inputId="group", 
                                        label="Select species group(s):",
                                        choices = groups.ops, 
                                        multiple = TRUE,
-                                       selected = groups.ops
+                                       selected = groups.ops[-which(groups.ops%in%bad)]
            ),#end species group grouping UI
            "cave dependency"=selectInput(inputId="group", 
                                        label="Select cave status:",
                                        choices = cave.ops, 
                                        multiple = TRUE,
-                                       selected = cave.ops
+                                       selected = cave.ops[-which(cave.ops%in%bad)]
            )#end cave dependency grouping UI
     )#end grouping switch
   })#end group UI ---
@@ -649,7 +656,7 @@ server <- function(input, output) {
     
     # standard year filter -----
     bats.sub <- bats %>% 
-      filter( year %in% input$year )
+      filter( year %in% input$year, month %in% input$month )
     # make group column -----
     if( input$grouping == grouping.ops[1] ){ 
       bats.sub <- bats.sub %>% mutate( group = AUTO.ID )
@@ -671,10 +678,51 @@ server <- function(input, output) {
   # Long-Term (yearly) plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$yearly.plot <- renderPlot({
-    ggplot() +
-      labs(title="Long-Term Bat Activity",
-           x="Year", y="Relative Frequency",
+    
+    # set wrapV by input wrap var -----
+    if(input$yearly.wrapVar=='management'){ 
+      bats.yr <- rv$bats.sub %>% mutate(wrapV=habitat) 
+    }
+    
+    # summarize by appropriate groups -----
+    if(input$yearly.wrapVar == 'none'){
+      bats.yr <- rv$bats.sub %>% 
+        group_by(year) %>% 
+        mutate( nSensors = length(unique(siteID)) )
+      bats.yr <- bats.yr %>% 
+        group_by(year,group) %>% 
+        summarize( count=n(), relFreq=count/nSensors )
+      bats.yr <- distinct(bats.yr)
+    } else {
+      bats.yr <- bats.yr %>% 
+        group_by(year,wrapV) %>% 
+        mutate( nSensors = length(unique(siteID)) )
+      bats.yr <- bats.yr %>% 
+        group_by(year,wrapV,group) %>% 
+        summarize( count=n(), relFreq=count/nSensors )
+      bats.yr <- distinct(bats.yr)
+    }
+    
+    # make base plot -----
+    yearly.p <- ggplot(bats.yr, aes(x=year, y=relFreq, color=group) ) +
+      scale_fill_manual(values = cbPalette) +
+      labs(title="Yearly Bat Activity",
+           x="Year", y ="Relative Frequency",
            caption="Sewanee Bat Study, DataLab 2022")
+    
+    # add line geom -----
+    yearly.p <- yearly.p + geom_line()
+    
+    # wrap if appropriate -----
+    if(input$yearly.wrapVar != 'none'){
+      yearly.p <- yearly.p + facet_wrap(~wrapV)
+    }
+    
+    # make plot with plotly ----
+    #aes(x=year, y=relFreq, color=group, text=paste("Group:",group))
+    #ggplotly( yearly.p, hovertemplate=paste() )
+    yearly.p
+    
   })#end long-term plot ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
@@ -698,7 +746,7 @@ server <- function(input, output) {
     if(input$hourly.wrapVar=='year'){ 
       bats.hr <- rv$bats.sub %>% mutate(wrapV=year) 
     } else if(input$hourly.wrapVar=='month'){ 
-      bats.hr <- rv$bats.sub %>% mutate(wrapV=month)
+      bats.hr <- rv$bats.sub %>% mutate(wrapV=factor(month,levels=month.abb[1:12]))
     } else if(input$hourly.wrapVar=='management'){ 
       bats.hr <- rv$bats.sub %>% mutate(wrapV=habitat) 
     }
@@ -721,19 +769,22 @@ server <- function(input, output) {
     }
     
     # make base plot -----
-    hourly.p <- ggplot( bats.hr ) +
-      geom_line( aes(x=hour, y=relFreq, color=group) )
+    hourly.p <- ggplot( bats.hr, aes(x=hour, y=relFreq, color=group) ) +
+      scale_fill_manual(values = cbPalette) +
+      labs(title="Circadian Bat Activity",
+           x="Hour", y="Relative Frequency",
+           caption="Sewanee Bat Study, DataLab 2022")
     
     # wrap if appropriate -----
     if(input$hourly.wrapVar != 'none'){
       hourly.p <- hourly.p + facet_wrap(~wrapV)
     }
     
-    # make plot with labels -----
-    hourly.p +
-      labs(title="Circadian Bat Activity",
-           x="Hour", y="Relative Frequency",
-           caption="Sewanee Bat Study, DataLab 2022")
+    # add line geom -----
+    hourly.p <- hourly.p + geom_line()
+    
+    # make plot -----
+    hourly.p 
     
   })#end circadian plot ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
