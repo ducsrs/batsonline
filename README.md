@@ -1,8 +1,8 @@
 # Protecting the Bat Population
-Com”BAT”ing White-Nose Syndrome
+Com-BAT-ing Ecological Challenges
 
 ### Project Statement
-Bats are a vital part of ecosystems and have been on the decline due to one of the worst wildlife diseases in modern history, white nose syndrome. Sewanee Bat Study has collected years of data on the behavior and habitats of local cave-dwelling bat species. We are analyzing the data and creating a dashboard to help make better data-driven forest management decisions that will help control the spread of white nose syndrome.
+Bats are a vital part of ecosystems and some have been declining due to one of the worst wildlife diseases in modern history, Pseudogymnoascus destructans, more commonly known as white-nose syndrome. The Sewanee Bat Study has collected years of data on the behavior and habitats of local forest-dwelling bat species. We are analyzing the data and creating a dashboard to help make data-driven forest management decisions.
 
 
 ### Summary of Our Project
@@ -61,4 +61,159 @@ We Are Already Working on this with Amy to find the most productive way of organ
 If the labels dont end up together and dont match, we will lose track of what went where, and theres so many files.
 Make sure the data is connected with the right compartment and site and management status at the time of sampling.
 Keep the right species pairings.
+
+
+
+### Lit Review
+The Sewanee Bat Study was launched six years ago by the Director of the Office of Environmental Stewardship and Sustainability (OESS), Amy Turner, in an effort to understand how Sewanee’s management practices and strategies affect local bat species. The study aims to combat the effects climate change may have on bat populations by learning how to “properly manage forested sites and control the spread of white-nose syndrome” (Bats Proposal).  Sewanee realizes how vital bats are to the ecosystem, serving as pollinators, seed dispersers, and a form of pest control for nighttime insects. To help Amy and her team, we will be organizing, analyzing, and creating visualizations of six years worth of acoustic data that will be displayed on an interactive dashboard we create. This report will provide some background information and studies that explain what is already known about white-nose syndrome, management practices, and collecting data with acoustic monitors. 
+In previous years, researchers across the nation have attempted to track population changes and study what bat species are impacted the most by white-nose syndrome through mist-netting. Studies have shown that acoustic monitoring is more effective at monitoring bat populations than traditional monitoring (A Comparison of Passive and Active Acoustic Sampling for a Bat Community Impacted by White-Nose Syndrome, 2014). . Acoustic monitoring is able to capture a larger, more diverse number of bats, define species, and collect more data quicker than capture methods that are only able to sample small portions of an area (A Comparison of Passive and Active Acoustic Sampling for a Bat Community Impacted by White-Nose Syndrome, 2014).  Tennessee is one of many southeastern states that have hibernacula available to threatened and endangered species (Bernard, McCraken. 2017). Sewanee has over 30 caves alone and is home to the tri-colored, eastern red, evening, silver-haired, southeastern, gray, Indiana, northern long-eared, big and little brown bats. Using the six years’ worth of acoustic data collected from Kaleidoscope, we will be able to understand which species are resistant to or most affected by white-nose syndrome. With our findings,, we will help Amy and her team understand which areas to conserve and how to manage them. 
+One study that has been beneficial to our efforts is “White‐nose Syndrome and Summer Bat Presence” done by The Wildlife Society (Barr et. al, 2021). This study conducted research in Kentucky, Ohio, Virginia, and West Virginia on three specific species of bats (all of which are also found in Tennessee and in our project). The purpose was to explore the relationship between White-Nose Syndrome, land types, and distinct variables of the observed sites. This study was conducted from May to August of 2017 and surveyed 6 different site types: Forest-canopy openings, water sources, wooded fence lines, recently logged forests, wooded areas with open canopies, and woodland edges (Barr et. al, 2021). 
+Similar to what we are doing, the Wildlife Society also processed their bat call recordings in Kaleidoscope and then analyzed and visualized their data in R. What they found across roughly 2,500 sites was that the data supported their hypothesis that “for all 3 species, broad categorization of vegetation structure or land cover type is a useful predictor of site‐specific presence” (Barr et. al, 2021). The northern long-eared bats and Indiana bats were more likely to be found near bodies of water than on the edge of forested areas. Northern long-eared bats specifically were also more likely to be recorded near breaks in the canopy than on the forest edge. Big brown bats, on the other hand, were significantly more likely to be found near the forest edges than at any other site. These results made sense as the morphology of these species affects where they are best able to thrive. The overall frequency of bats seems to have declined due to WNS across these areas. Specifically, there was a sharper decline in areas that had experienced higher rates of white-nose than those that didn’t. Interestingly, this study found that a combination of karst areas and high WNS impact led to higher numbers of big brown bats.
+
+
+### Data Dictionary
+Data Variables:
+
+Base Variables:
+AUTO.ID: the species identified by the processing program Kaleidoscope
+ALTERNATES: the alternative species ID(s) for AUTO.ID
+DATE: the date the bat call was recorded, in yyyy-mm-dd format
+TIME: the time the bat call was recorded, in hh:mm:ss format
+COMPARTMENT: the compartment the recording device was placed in
+SITE: the site within the compartment the recording device was placed in
+path: the file path the data was read from (for purposes of error tracing)
+Calculated variables:
+	year: the year in which the call was recorded
+	month: the named month in which the call was recorded
+	monthN: the numeric month in which the call was recorded
+	hour: the hour in which the call was recorded
+	type: the environmental type of the compartment/site in which the call was recorded 
+types:  managed, unmanaged, or cove
+
+
+Data Folder Structure:
+Data folder 
+Reference files
+Compartment folders 
+Compartment_Site folders 
+Fiscal Year folders 
+Date Range folders 
+Data file
+Summary file
+
+Standard file path: Data/Compartment #/C#_S#/FY##/mm.dd.yy/filename.type
+
+Reference files:
+2018 Bat Acoustic Summary.xlsx
+An example excel document listing every bat call recorded in 2018, with tabs for the different sites, and a main bat activity summary tab.
+2018 Filtered.csv
+An example combined and column filtered data set of bat calls from 2018, containing habitat type, site, datetime, and species code
+wns_county_status.csv
+WNS Status determination of counties by state biologists, with year determined and year information was released. Note: Before 2017 exact dates were not recorded, only the winter season. January 1st was chosen to approximate this. Status season is the winter year for which the data was collected.  Winter years roughly correspond to the period of November to May.
+
+Folders:
+Compartment #
+The geographical compartment on Sewanee where the data was recorded
+C#_S#
+Compartment and Site ID where the recording device was placed
+FY##
+Fiscal Year in which the data was recorded
+Date Range
+The dates over which data was recorded
+
+
+### Project Proposal
+Tabs:
+About 
+Project overview + tabs summary
+Team summary?
+Long-term and Climate Trends
+Visuals:
+Weather type (toggle background)
+species/species group (colored activity lines)
+Management type (facet toggle)
+Month focus (opacity)?
+Data Filters:
+Year
+Compartment?
+Seasonal Trends
+Visuals:
+species/species group (monthly activity; colored line)
+Management type (facet toggle)
+Data Filters:
+Year
+Compartment?
+Circadian Trends
+Visuals:
+species/species group (hourly activity; colored line)
+Management type (facet toggle)
+Data Filters:
+Year 
+Compartment?
+Spatial Trends
+Visuals:
+Management type
+Data Filters:
+Year
+Compartment?
+Diversity Trends
+Visuals:
+Proportion of calls by species/group (colored line/proportion bar)
+Management type (facet toggle)
+Data Filters:
+Year
+Compartment?
+Sensor Information
+Visuals:
+Sensor/mic (noID/noise proportion bars)
+Year (facet wrap)
+Data Filters:
+noID/Noise props (toggle between)
+sensor/mic (toggle between)
+Filters:
+Species/species group
+Select multiple
+Year/date
+Range sliders?
+Select multiple?
+Date range?
+Compartment/site
+Select multiple
+Season/month
+Select multiple?
+Range slider?
+
+
+
+### Project Plan
+Exploratory analyses:
+Long-Term trends (yearly) + Climate trends (temperature/weather)
+
+Spatial trends (compartment/management)
+
+Seasonal trends (monthly)
+
+Circadian trends (hourly)
+
+Diversity trends (species proportions)
+
+Sensor accuracy/recording effort analysis
+Dashboard integration
+Take all exploratory analysis and integrate into dashboard
+
+About tab
+
+Long-Term trends (yearly) + Climate trends (temperature/weather)
+
+Spatial trends (compartment/management)
+
+Seasonal trends (monthly)
+
+Circadian trends (hourly)
+
+Diversity trends (species proportions)
+
+Sensor accuracy/recording effort analysis
+
+
 

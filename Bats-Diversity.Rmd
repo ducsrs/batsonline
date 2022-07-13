@@ -34,10 +34,13 @@ Big Graph
   
 # by changing the x-axis value, we can create a couple of different graphs to include on the tab to tell different stories
 
+#this is where the main graph is created. first by creating a new dataframe where a new column is created that shows the total bat calls per year by species, while filtering out all noise.
 bats.per <- bats %>% 
   filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
   group_by(year) %>% 
   mutate(tot_bat = n())
+
+# the vision was to have percentages that are displayed on the graph, so essentially the proportion of species bat recordings are put over total recordings, then multiplied by 100 to give a percent, with the distinction of a percentage being taken from each year as well.
 
 bats.per <- bats.per %>% 
   mutate(year = factor(year, levels = min(bats.per$year):max(bats.per$year))) %>% 
@@ -45,10 +48,14 @@ bats.per <- bats.per %>%
   summarise(prop = n()/tot_bat, 
             perc = prop*100)
 
+
+# using the distinct command so there is only one observation per species per year
 bats.per <- distinct(bats.per)
+
+#this is a custom colorblind palette because all others only contain 8
 cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#9200bc")
 
-
+# the ggplot graph was made first, plotting the percentages of each species against the different years, which each species representing a color on the bars. This is all wrapped inside of an object so that plotly can be used. The text = paste function dictates what text goes inside of the box of text from the hover over feature. 
 diversity_graph <- ggplot(data = bats.per)+
   geom_col(aes(x = year,
                y = perc,
@@ -62,7 +69,7 @@ diversity_graph <- ggplot(data = bats.per)+
        y = 'Percent of Total Recordings')
   
 
-
+# this is the plotly object, with tooltip serving as instructions for what the hover textbox looks like.
 ggplotly(diversity_graph, tooltip = c("fill", "text"))
 
 ```
@@ -76,6 +83,10 @@ Exploratory Analysis
 # trying to learn plotly
 
 # commented this out as the one below is better but i might need this if i mess it up too far
+```{r}
+
+# essentially this was all of the code repeated a second time before plotly was integrated in case of a dire circumstance. 
+
 # bats.per <- bats %>% 
  # filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
 #  group_by(year, COMPARTMENT) %>% 
@@ -98,6 +109,9 @@ Exploratory Analysis
 
 
 # ggplotly(diversity_graph, tooltip = c("fill", "text"))
+``` 
+
+The following pieces of code are not included on the dashboard, but were a part of the exploratory analysis that aided in our understanding of the data. 
 
 ```{r}
 # account for number of sensors active on each date -----
@@ -159,7 +173,7 @@ ggplot(data = big_v_lil %>% filter(sensor == "C22_S9"))+
 
 
 ```{r}
-
+# this is an early draft of the main diversity graph.
 bats.prop <- bats %>% 
   filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
   group_by(year) %>% 
