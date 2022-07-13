@@ -188,19 +188,31 @@ Range slider?
 ### Project Plan
 Exploratory analyses:
 Long-Term trends (yearly) + Climate trends (temperature/weather)
+
 Spatial trends (compartment/management)
+
 Seasonal trends (monthly)
+
 Circadian trends (hourly)
+
 Diversity trends (species proportions)
+
 Sensor accuracy/recording effort analysis
 Dashboard integration
 Take all exploratory analysis and integrate into dashboard
+
 About tab
+
 Long-Term trends (yearly) + Climate trends (temperature/weather)
+
 Spatial trends (compartment/management)
+
 Seasonal trends (monthly)
+
 Circadian trends (hourly)
+
 Diversity trends (species proportions)
+
 Sensor accuracy/recording effort analysis
 
 
