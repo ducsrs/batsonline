@@ -499,10 +499,10 @@ server <- function(input, output) {
   output$group.UI <- renderUI({
     switch(input$grouping,
            "species"=selectInput(inputId="group", 
-                                 label="Select species:",
-                                 choices = species.ops, 
-                                 multiple = TRUE,
-                                 selected = species.ops
+                                       label="Select species:",
+                                       choices = species.ops,
+                                       multiple = TRUE,
+                                       selected = species.ops
            ),#end species grouping UI
            "species group"=selectInput(inputId="group", 
                                        label="Select species group(s):",
@@ -511,10 +511,10 @@ server <- function(input, output) {
                                        selected = groups.ops
            ),#end species group grouping UI
            "cave dependency"=selectInput(inputId="group", 
-                                         label="Select cave status:",
-                                         choices = cave.ops, 
-                                         multiple = TRUE,
-                                         selected = cave.ops
+                                       label="Select cave status:",
+                                       choices = cave.ops, 
+                                       multiple = TRUE,
+                                       selected = cave.ops
            )#end cave dependency grouping UI
     )#end grouping switch
   })#end group UI ---
@@ -647,21 +647,21 @@ server <- function(input, output) {
   rv <- reactiveValues()
   observe({
     
-    # main data subset -----
-    # standard year filter 
+    # standard year filter -----
     bats.sub <- bats %>% 
       filter( year %in% input$year )
-    # grouping filter
+    # make group column -----
     if( input$grouping == grouping.ops[1] ){ 
-      bats.sub <- bats.sub %>% filter( AUTO.ID %in% input$group )
-    } else if( input$grouping == grouping.ops[2] ){ 
-      bats.sub <- bats.sub %>% filter( species_group %in% input$group )
-    } else if( input$grouping == grouping.ops[3] ){ 
-      bats.sub <- bats.sub %>% filter( obligate %in% input$group )
+      bats.sub <- bats.sub %>% mutate( group = AUTO.ID )
+    } else if( input$grouping == grouping.ops[2] ){
+      bats.sub <- bats.sub %>% mutate( group = species_group )
+    } else if( input$grouping == grouping.ops[3] ){
+      bats.sub <- bats.sub %>% mutate( group = obligate )
     }
+    # grouping filter -----
+    bats.sub <- bats.sub %>% filter( group %in% input$group )
+    # assign rv -----
     rv$bats.sub <- bats.sub
-    # monitor accuracy data -----
-    
     
   })
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -709,20 +709,20 @@ server <- function(input, output) {
         group_by(hour) %>% 
         mutate( nSensors = length(unique(siteID)) )
       bats.hr <- bats.hr %>% 
-        group_by(hour,AUTO.ID) %>% 
+        group_by(hour,group) %>% 
         summarize( count = n(), relFreq = count/nSensors )
     } else {
       bats.hr <- bats.hr %>% 
         group_by(hour, wrapV) %>% 
         mutate( nSensors = length(unique(siteID)) )
       bats.hr <- bats.hr %>% 
-        group_by(hour,wrapV,AUTO.ID) %>% 
+        group_by(hour,wrapV,group) %>% 
         summarize( count = n(), relFreq = count/nSensors )
     }
     
     # make base plot -----
     hourly.p <- ggplot( bats.hr ) +
-      geom_line( aes(x=hour, y=relFreq, color=AUTO.ID) )
+      geom_line( aes(x=hour, y=relFreq, color=group) )
     
     # wrap if appropriate -----
     if(input$hourly.wrapVar != 'none'){
