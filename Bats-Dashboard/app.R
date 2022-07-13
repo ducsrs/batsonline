@@ -15,7 +15,13 @@ library(shinydashboard)
 source('../dataRead.R')
 
 grouping.ops <- c('species','species group','cave dependency')
+species.ops <- sort(unique(bats$AUTO.ID))
+groups.ops <- sort(unique(bats$species_group))
+cave.ops <- sort(unique(bats$obligate))
+
 weather.ops <- c('rain','temperature','wind')
+year.ops <- c( min(bats$year):max(bats$year) )
+month.ops <- month.abb[1:12]
 
 #--UI--########################################################################
 ui <- dashboardPage(
@@ -53,17 +59,17 @@ ui <- dashboardPage(
       # year filter ----
       selectInput(inputId = "year", 
                   label = "Select year(s):", 
-                  choices = c( min(bats$year):max(bats$year) ),
+                  choices = year.ops,
                   multiple = TRUE,
-                  selected = c( min(bats$year):max(bats$year) )
+                  selected = year.ops
       ),#end year multiple select
       
       # month filter -----
       selectInput(inputId = "month", 
                   label = "Select month(s):", 
-                  choices = month.abb[1:12],
+                  choices = month.ops,
                   multiple = TRUE, 
-                  selected = month.abb[1:12]
+                  selected = month.ops
       )#end month multiple select
       
       # compartment filter -----
@@ -494,20 +500,21 @@ server <- function(input, output) {
     switch(input$grouping,
            "species"=selectInput(inputId="group", 
                                  label="Select species:",
-                                 choices = , 
+                                 choices = species.ops, 
                                  multiple = TRUE,
-                                 selected = sort(unique(bats$AUTO.ID))
+                                 selected = species.ops
            ),#end species grouping UI
            "species group"=selectInput(inputId="group", 
                                        label="Select species group(s):",
-                                       choices = sort(unique(bats$species_group)), 
+                                       choices = groups.ops, 
                                        multiple = TRUE,
-                                       selected = sort(unique(bats$species_group))
+                                       selected = groups.ops
            ),#end species group grouping UI
            "cave dependency"=selectInput(inputId="group", 
                                          label="Select cave status:",
-                                         choices = sort(unique(bats$obligate)), 
-                                         multiple = TRUE
+                                         choices = cave.ops, 
+                                         multiple = TRUE,
+                                         selected = cave.ops
            )#end cave dependency grouping UI
     )#end grouping switch
   })#end group UI ---
@@ -686,10 +693,48 @@ server <- function(input, output) {
   # Circadian (hourly) plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$hourly.plot <- renderPlot({
-    ggplot() +
+    
+    # set wrapV by input wrap var -----
+    if(input$hourly.wrapVar=='year'){ 
+      bats.hr <- rv$bats.sub %>% mutate(wrapV=year) 
+    } else if(input$hourly.wrapVar=='month'){ 
+      bats.hr <- rv$bats.sub %>% mutate(wrapV=month)
+    } else if(input$hourly.wrapVar=='management'){ 
+      bats.hr <- rv$bats.sub %>% mutate(wrapV=habitat) 
+    }
+    
+    # summarize by appropriate groupings -----
+    if(input$hourly.wrapVar == 'none'){
+      bats.hr <- rv$bats.sub %>% 
+        group_by(hour) %>% 
+        mutate( nSensors = length(unique(siteID)) )
+      bats.hr <- bats.hr %>% 
+        group_by(hour,AUTO.ID) %>% 
+        summarize( count = n(), relFreq = count/nSensors )
+    } else {
+      bats.hr <- bats.hr %>% 
+        group_by(hour, wrapV) %>% 
+        mutate( nSensors = length(unique(siteID)) )
+      bats.hr <- bats.hr %>% 
+        group_by(hour,wrapV,AUTO.ID) %>% 
+        summarize( count = n(), relFreq = count/nSensors )
+    }
+    
+    # make base plot -----
+    hourly.p <- ggplot( bats.hr ) +
+      geom_line( aes(x=hour, y=relFreq, color=AUTO.ID) )
+    
+    # wrap if appropriate -----
+    if(input$hourly.wrapVar != 'none'){
+      hourly.p <- hourly.p + facet_wrap(~wrapV)
+    }
+    
+    # make plot with labels -----
+    hourly.p +
       labs(title="Circadian Bat Activity",
            x="Hour", y="Relative Frequency",
            caption="Sewanee Bat Study, DataLab 2022")
+    
   })#end circadian plot ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
@@ -829,7 +874,6 @@ server <- function(input, output) {
     
     # summarize by appropriate groups -----
     if(input$sensor.wrapVar == 'none'){
-      print(head(rv$bats.sub$mic))
       bats.mic <- rv$bats.sub %>% 
         group_by(mic) %>% 
         summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
