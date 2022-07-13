@@ -8,7 +8,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 # basic read -----
-source('dataRead.R')
+source('dataRead-bats.R')
 bats <- bats %>%  
   rename( siteID = sensor) %>% 
   select(-LATITUDE,-LONGITUDE)
@@ -20,6 +20,11 @@ source('dataRead-sensorDates.R')
 bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
 
 No.ID = c("Noise", "NoId", "NoID")
+
+library(readxl)
+batspecies <- read_excel("BatSpecies.xlsx")
+#left join the 2 datasets
+bats<- left_join(bats,batspecies, by="AUTO.ID")
 ```
 
 # Long-Term (yearly) and Climate (temperature/weather) Trends
@@ -69,12 +74,6 @@ bats <- bats %>%
   mutate(species_group = ifelse(grepl("^MYO", AUTO.ID), "MYOTIS", AUTO.ID),
          species_group = ifelse(AUTO.ID %in% EPTFUS.LASNOC, "EPTFUS.LASNOC", species_group),
          species_group = ifelse(AUTO.ID %in% LASBOR.NYCHUM, "LASBOR.NYCHUM", species_group))
-
-cave_obligate = c('PERSUB', 'MYOLEI', 'MYOAUS', 'MYOLUC', 'MYOSOD', 'MYOGRI', 'MYOSEP')
-non_cave_obligate = c('LASBOR', 'NYCHUM', 'EPTFUS', 'LASNOC', 'LASCIN', 'CORRAF')
-bats <- bats %>%
-  mutate(`cave obligate?` = ifelse(AUTO.ID %in% cave_obligate, TRUE, NA),
-         `cave obligate?` = ifelse(AUTO.ID %in% non_cave_obligate, FALSE, `cave obligate?`))
   
 ```
 
