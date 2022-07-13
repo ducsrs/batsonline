@@ -32,7 +32,7 @@ cave_obligate = c('MYOLEI','MYOAUS','MYOLUC','MYOSOD','MYOGRI','MYOSEP')
 seasonal_cave_obligate = c('PERSUB',"EPTFUS", "CORRAF")
 non_cave_obligate = c('LASBOR','NYCHUM','LASNOC','LASCIN')
 bats <- bats %>%
-  mutate( obligate = ifelse(AUTO.ID %in% cave_obligate, "cave obligate", NA),
+  mutate( obligate = ifelse(AUTO.ID %in% cave_obligate, "cave obligate", AUTO.ID),
           obligate = ifelse(AUTO.ID %in% non_cave_obligate, "not cave obligate", obligate),
           obligate = ifelse(AUTO.ID %in% seasonal_cave_obligate, "seasonal cave obligate", obligate))
 
