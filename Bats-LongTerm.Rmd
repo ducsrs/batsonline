@@ -25,6 +25,14 @@ library(readxl)
 batspecies <- read_excel("BatSpecies.xlsx")
 #left join the 2 datasets
 bats<- left_join(bats,batspecies, by="AUTO.ID")
+
+# group common names
+bats <- bats %>% 
+  mutate( group_common = ifelse(species_group=="MYOTIS", "Genus Myotis", Common),
+          group_common = ifelse(species_group=="EPTFUS.LASNOC",
+                                "Big Brown Bat/Silver-haired Bat", group_common),
+          group_common = ifelse(species_group=="LASBOR.NYCHUM",
+                                "Red Bat/Evening Bat", group_common) )
 ```
 
 # Long-Term (yearly) and Climate (temperature/weather) Trends
@@ -183,13 +191,16 @@ ggplotly(longterm_graph, hovertemplate = paste())
 # Universal inputs (grouping, group, year, month)
 # yearly.weather (vector - rain, wind, temperature)
 # yearly.wrapVar (vector - none, management)
+bad <- c('no.ID','Noise')
 
 # stand-in input variables -----
-input.grouping <- 'species'
-input.group <- c("CORRAF","EPTFUS","LASBOR")
-input.year <- c(2017:2022)
+input.grouping <- 'species group'
+#input.group <- c("CORRAF","EPTFUS","LASBOR")
+input.group <- unique(bats$species_group)
+input.group <- input.group[-which(input.group%in%bad)]
+input.year <- c(2017:2021)
 input.month <- month.abb[1:12]
-yearly.wrapVar <- 'none'
+yearly.wrapVar <- 'management'
 
 # colorblind palatte -----
 cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#133139")
@@ -201,9 +212,12 @@ bats.sub <- bats %>%
   filter( year %in% input.year, month %in% input.month )
 
 # set grouping var column -----
-if(input.grouping=='species'){ bats.sub <- bats.sub %>% mutate(group=AUTO.ID) }
-if(input.grouping=='species group'){ bats.sub<-bats.sub%>%mutate(group=species_group) }
-if(input.grouping=='cave dependency'){ bats.sub <- bats.sub %>% mutate(group=obligate) }
+if(input.grouping=='species'){ 
+  bats.sub <- bats.sub %>% mutate( group=AUTO.ID, common=Common ) }
+if(input.grouping=='species group'){ 
+  bats.sub<-bats.sub %>% mutate( group=species_group, common=group_common) }
+if(input.grouping=='cave dependency'){ 
+  bats.sub <- bats.sub %>% mutate( group=obligate, common=obligate ) }
 
 # group filter -----
 bats.sub <- bats.sub %>% 
@@ -212,7 +226,9 @@ bats.sub <- bats.sub %>%
 
 ```{r}
 # set wrap var column -----
-if(yearly.wrapVar=='management'){ bats.yr <- bats.sub %>% mutate(wrapV=habitat) }
+if(yearly.wrapVar=='management'){ bats.yr <- bats.sub %>% 
+  mutate(wrapV=habitat) %>% 
+  filter( !is.na(habitat) ) }
 
 # summarize by appropriate groups -----
 if(yearly.wrapVar == 'none'){
@@ -220,7 +236,7 @@ if(yearly.wrapVar == 'none'){
     group_by(year) %>% 
     mutate( nSensors = length(unique(siteID)) )
   bats.yr <- bats.yr %>% 
-    group_by(year,group) %>% 
+    group_by(year,group,common) %>% 
     summarize( count=n(), relFreq=count/nSensors )
   bats.yr <- distinct(bats.yr)
 } else {
@@ -228,7 +244,7 @@ if(yearly.wrapVar == 'none'){
     group_by(year,wrapV) %>% 
     mutate( nSensors = length(unique(siteID)) )
   bats.yr <- bats.yr %>% 
-    group_by(year,wrapV,group) %>% 
+    group_by(year,wrapV,group,common) %>% 
     summarize( count=n(), relFreq=count/nSensors )
   bats.yr <- distinct(bats.yr)
 }
@@ -237,7 +253,7 @@ if(yearly.wrapVar == 'none'){
 ```{r}
 # make base plot -----
 yearly.p <- ggplot( bats.yr ) +
-  geom_line( aes(x=year, y=relFreq, color=group, text=paste("Group:",group)) ) +
+  geom_line( aes(x=year, y=relFreq, color=common, text=paste("Group:",common)) ) +
   scale_fill_manual(values = cbPalette) +
   labs(title="Yearly Bat Activity",
        x="Year", y ="Relative Frequency",
@@ -245,11 +261,12 @@ yearly.p <- ggplot( bats.yr ) +
 
 # wrap if appropriate -----
 if(yearly.wrapVar != 'none'){
-  yearly.p <- yearly.p + facet_wrap(~wrapV)
+  yearly.p <- yearly.p + facet_wrap(~wrapV, ncol=1)
 }
 
 # plot with plotly ----
-ggplotly( yearly.p, hovertemplate=paste() )
+#ggplotly( yearly.p, hovertemplate=paste() )
+yearly.p
 ```
 
 

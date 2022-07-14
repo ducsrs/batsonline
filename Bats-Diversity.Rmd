@@ -1,6 +1,6 @@
 ---
 title: 'Bats: Diversity Trends'
-author: "Hallie Rutten, Shelby Cline, Monae Scott"
+author: "Shelby Cline"
 date: '2022-06-29'
 output: html_document
 ---
@@ -24,6 +24,14 @@ library(readxl)
 batspecies <- read_excel("BatSpecies.xlsx")
 #left join the 2 datasets
 bats<- left_join(bats,batspecies, by="AUTO.ID")
+
+# group common names
+bats <- bats %>% 
+  mutate( group_common = ifelse(species_group=="MYOTIS", "Genus Myotis", Common),
+          group_common = ifelse(species_group=="EPTFUS.LASNOC",
+                                "Big Brown Bat/Silver-haired Bat", group_common),
+          group_common = ifelse(species_group=="LASBOR.NYCHUM",
+                                "Red Bat/Evening Bat", group_common) )
 ```
 
 # Diversity (species) Trends
@@ -191,6 +199,99 @@ bats.prop <- distinct(bats.prop)
                  y = prop,
                  color = AUTO.ID))
 ```
+
+
+
+
+
+# DASHBOARD PREP
+
+```{r}
+# Universal inputs (grouping, group, year, month)
+# diversity.wrapVar (vector - none, management)
+bad <- c('no.ID','Noise')
+
+# stand-in input variables -----
+input.grouping <- 'species group'
+input.group <- unique(bats$species_group)
+input.group <- input.group[-which(input.group%in%bad)]
+input.year <- c(2017:2022)
+input.month <- month.abb[1:12]
+diversity.wrapVar <- 'none'
+
+# colorblind palatte -----
+cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#133139")
+```
+
+```{r}
+# basic filter -----
+bats.sub <- bats %>% 
+  filter( year %in% input.year, month %in% input.month )
+
+# set grouping var column -----
+if(input.grouping=='species'){ bats.sub <- bats.sub %>% mutate(group=AUTO.ID) }
+if(input.grouping=='species group'){ bats.sub<-bats.sub%>%mutate(group=species_group) }
+if(input.grouping=='cave dependency'){ bats.sub <- bats.sub %>% mutate(group=obligate) }
+
+# group filter -----
+bats.sub <- bats.sub %>% 
+  filter( group %in% input.group )
+```
+
+```{r}
+# set wrap var column -----
+if(diversity.wrapVar=='management'){ bats.div <- bats.sub %>% mutate(wrapV=habitat) }
+
+# summarize by appropriate groups -----
+if(diversity.wrapVar=='none'){
+  bats.div <- bats.sub %>% 
+    group_by(year) %>% 
+    mutate( total=n() )
+  bats.div <- bats.div %>% 
+    mutate( year=factor(year, levels=min(year):max(year)) ) %>% 
+    group_by(year,group,group_common) %>% 
+    summarise( prop = n()/total, 
+               perc = prop*100 )
+} else {
+  bats.div <- bats.div %>% 
+    group_by(year,wrapV) %>% 
+    mutate( total=n() )
+  bats.div <- bats.div %>% 
+    mutate( year=factor(year, levels=min(year):max(year)) ) %>% 
+    group_by(year,wrapV,group,group_common) %>% 
+    summarise( prop = n()/total, 
+               perc = prop*100 )
+}
+bats.div <- distinct(bats.div)
+```
+
+```{r}
+# make base plot -----
+diversity.p <- ggplot( bats.div ) +
+  geom_col( aes( x=year, y=perc, fill=group_common, 
+                 text=paste0("Percentage: ",round(perc),"% ") ) )+
+  scale_fill_manual(values = cbPalette)+
+  labs(title='Bat Species Proportions',
+       x='Year', y='Percent of Total Activity',
+       caption="Sewanee Bat Study, DataLab 2022",
+       fill="Species Group")
+  
+# wrap if appropriate -----
+if(diversity.wrapVar != 'none'){
+  diversity.p <- diversity.p + facet_wrap(~wrapV)
+}
+
+# plot with plotly -----
+#ggplotly(diversity.p, tooltip=c("fill", "perc", "spec"))
+diversity.p
+```
+
+
+
+
+
+
+
 
 
 
