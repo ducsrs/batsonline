@@ -219,7 +219,7 @@ input.year <- c(2017:2022)
 input.month <- month.abb[1:12]
 diversity.wrapVar <- 'none'
 
-# colorblind palatte -----
+# colorblind palette -----
 cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#133139")
 ```
 
