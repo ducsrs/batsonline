@@ -26,6 +26,8 @@ weather.ops <- c('rain','temperature','wind')
 year.ops <- c( min(bats$year):max(bats$year) )
 month.ops <- month.abb[1:12]
 
+compartment.ops <- sort(unique(bats$COMPARTMENT))
+
 cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00", "#fed457", "#c2c527", 
                "#9ae825", "#6f9c01", "#c5d5ea", "#d3ffe2", "#a2c2c6", "#087d93",
                "#0c3660", "#133139")
@@ -78,13 +80,6 @@ ui <- dashboardPage(
                   multiple = TRUE, 
                   selected = month.ops
       )#end month multiple select
-      
-      # compartment filter -----
-      #selectInput(inputId = "compartment", 
-      #            label = "Select compartment(s):", 
-      #            choices = unique(bats$COMPARTMENT),
-      #            multiple = TRUE 
-      #)#end compartment multiple select
       
     )#end sidebar menu
     
@@ -332,16 +327,21 @@ ui <- dashboardPage(
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='primary', collapsible=TRUE, 
-                             #radioButtons(inputId="site.grouping", 
-                             #             label="Display trends by:",
-                             #             choices = grouping.ops, 
-                             #             selected = grouping.ops[2]
-                             #),#end grouping UI
-                             #uiOutput("site.group.UI"),
-                             radioButtons(inputId="site.display", 
-                                          label="Display style:",
-                                          choices = c('facet','multiple'), 
-                                          selected = 'facet'
+                             selectInput(inputId = "site.comp", 
+                                         label = "Select compartment:", 
+                                         choices = compartment.ops,
+                                         #multiple = TRUE, 
+                                         selected = compartment.ops[1]
+                             ),#end compartment multiple select
+                             radioButtons(inputId="site.wrapVar", 
+                                          label="Wrap facets by:",
+                                          choices = c('none','site'), 
+                                          selected = 'none'
+                             ),#end wrap var selection
+                             radioButtons(inputId="site.granularity", 
+                                          label="Granularity:",
+                                          choices = c('year','month','day'), 
+                                          selected = 'year'
                              )#end wrap var selection
                         ),#end graph controls box
                         
@@ -841,10 +841,67 @@ server <- function(input, output) {
   # Spatial (site) plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$site.plot <- renderPlot({
-    ggplot() +
-      labs(title="Spatial Bat Activity",
-           x="Compartment", y="Relative Frequency",
-           caption="Sewanee Bat Study, DataLab 2022")
+    
+    # set granularity level -----
+    if(input$site.granularity == 'year'){
+      bats.map <- rv$bats.sub %>% mutate( div=year )
+    } else if(input$site.granularity == 'month'){
+      bats.map <- rv$bats.sub %>% 
+        mutate( div=as.Date(paste(year(DATE),month(DATE),1,sep='-')) )
+    } else { bats.map <- rv$bats.sub %>% mutate( div=DATE ) }
+    
+    # set wrapV by input wrap var -----
+    if(input$site.wrapVar=='site'){ bats.map <- bats.map %>% mutate(wrapV=SITE) }
+    
+    # summarize by appropriate groups -----
+    if(input$site.wrapVar == 'none'){
+      bats.map <- bats.map %>% 
+        group_by(COMPARTMENT,div) %>% 
+        mutate( nSensors = length(unique(siteID)) )
+      bats.map <- bats.map %>% 
+        group_by(COMPARTMENT,div,group,species) %>% 
+        summarize( count=n(), relFreq=count/nSensors )
+    } else {
+      bats.map <- bats.map %>% 
+        group_by(COMPARTMENT,div,wrapV) %>% 
+        mutate( nSensors = length(unique(siteID)) )
+      bats.map <- bats.map %>% 
+        group_by(COMPARTMENT,div,group,species,wrapV) %>% 
+        summarize( count=n(), relFreq=count/nSensors )
+    }
+    bats.map <- distinct(bats.map)
+    
+    # graphing loop -----
+    #for(comp in input$site.comp){
+      
+      # generate graph title -----
+      comp.T <- paste("Compartment",input$site.comp,"Bat Activity")
+      
+      # make base plot -----
+      site.p <- ggplot( bats.map %>% filter(COMPARTMENT==input$site.comp), 
+                        aes(x=div, y=relFreq, color=group) ) +
+        scale_fill_manual(values = cbPalette) +
+        labs(title=comp.T,
+             x="Date", y ="Relative Frequency",
+             caption="Sewanee Bat Study, DataLab 2022")
+      
+      # add line and point geoms -----
+      site.p <- site.p + geom_line() + geom_point()
+      
+      # make year graph neat -----
+      if(input$site.granularity == 'year'){
+        site.p <- site.p + 
+          scale_x_continuous( breaks = c(min(bats.map$div):max(bats.map$div)) )
+      }
+      
+      # wrap if appropriate -----
+      if(input$site.wrapVar != 'none'){ site.p <- site.p + facet_wrap(~wrapV) }
+      
+      # plot -----
+      print(site.p)
+      
+    #}# end graphing loop
+    
   })#end spatial plot ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
