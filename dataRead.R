@@ -40,9 +40,9 @@ bats <- bats %>%
 EPTFUS.LASNOC = c("EPTFUS", "LASNOC")
 LASBOR.NYCHUM = c("LASBOR", "NYCHUM")
 bats <- bats %>% 
-  mutate(species_group = ifelse(grepl("^MYO", AUTO.ID), "MYOTIS", AUTO.ID),
-         species_group = ifelse(AUTO.ID %in% EPTFUS.LASNOC, "EPTFUS.LASNOC", species_group),
-         species_group = ifelse(AUTO.ID %in% LASBOR.NYCHUM, "LASBOR.NYCHUM", species_group))
+  mutate(ID_group = ifelse(grepl("^MYO", AUTO.ID), "MYOTIS", AUTO.ID),
+         ID_group = ifelse(AUTO.ID %in% EPTFUS.LASNOC, "EPTFUS.LASNOC", ID_group),
+         ID_group = ifelse(AUTO.ID %in% LASBOR.NYCHUM, "LASBOR.NYCHUM", ID_group))
 
 
 
@@ -73,6 +73,9 @@ for(i in 1:nrow(sensors) ){
   sensorDates <- rbind(sensorDates,temp)
 }
 
+# join bats and sensor site data -----
+bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
+
 # clean environment -----
 rm(sns,temp,DATE,i,var)
 
@@ -80,7 +83,27 @@ rm(sns,temp,DATE,i,var)
 
 #--SPECIES--###################################################################
 
+# read basic names -----
 batspecies <- read_excel("../BatSpecies.xlsx")
+
+# join bats and species names data -----
+bats <- left_join(bats,batspecies, by="AUTO.ID")
+
+# group common names -----
+bats <- bats %>% 
+  mutate( group_common = ifelse(ID_group=="MYOTIS", "Genus Myotis", Common),
+          group_common = ifelse(ID_group=="EPTFUS.LASNOC",
+                                "Big Brown Bat/Silver-haired Bat",group_common),
+          group_common = ifelse(ID_group=="LASBOR.NYCHUM",
+                                "Red Bat/Evening Bat", group_common) )
+
+# group scientific names -----
+bats <- bats %>% 
+  mutate( group_species = ifelse(ID_group=="MYOTIS", "Myotis species", Scientific),
+          group_species = ifelse(ID_group=="EPTFUS.LASNOC",
+                                "Eptesicus fuscus/Lasionycteris noctivagans", group_species),
+          group_species = ifelse(ID_group=="LASBOR.NYCHUM",
+                                "Lasiurus borealis/Nycticeius humeralis", group_species) )
 
 
 
@@ -107,23 +130,4 @@ hourly <- read_xlsx("../SUD Weather Station.xlsx", sheet=2) %>%
 # recorded rain data -----
 rain <- read_xlsx("../SUD Weather Station.xlsx", sheet = 3)
 
-
-
-#--MANAGEMENT--################################################################
-
-# waiting on Amy's data
-
-
-
-#--JOINS--#####################################################################
-
-# join bats and sensor site data -----
-bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
-
-# join bats and species names data -----
-bats<- left_join(bats,batspecies, by="AUTO.ID")
-
-# weather? -----
-
-# join bats and management data -----
 

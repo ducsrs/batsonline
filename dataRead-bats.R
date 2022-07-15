@@ -36,6 +36,6 @@ bats <- bats %>%
 EPTFUS.LASNOC = c("EPTFUS", "LASNOC")
 LASBOR.NYCHUM = c("LASBOR", "NYCHUM")
 bats <- bats %>% 
-  mutate(species_group = ifelse(grepl("^MYO", AUTO.ID), "MYOTIS", AUTO.ID),
-         species_group = ifelse(AUTO.ID %in% EPTFUS.LASNOC, "EPTFUS.LASNOC", species_group),
-         species_group = ifelse(AUTO.ID %in% LASBOR.NYCHUM, "LASBOR.NYCHUM", species_group))
+  mutate(ID_group = ifelse(grepl("^MYO", AUTO.ID), "MYOTIS", AUTO.ID),
+         ID_group = ifelse(AUTO.ID %in% EPTFUS.LASNOC, "EPTFUS.LASNOC", ID_group),
+         ID_group = ifelse(AUTO.ID %in% LASBOR.NYCHUM, "LASBOR.NYCHUM", ID_group))
