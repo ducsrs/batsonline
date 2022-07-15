@@ -18,8 +18,8 @@ source('../dataRead.R')
 bad <- c('no.ID','Noise')
 
 grouping.ops <- c('species','species group','cave dependency')
-species.ops <- sort(unique(bats$AUTO.ID))
-groups.ops <- sort(unique(bats$species_group))
+species.ops <- sort(unique(bats$Common))
+groups.ops <- sort(unique(bats$group_common))
 cave.ops <- sort(unique(bats$obligate))
 
 weather.ops <- c('rain','temperature','wind')
@@ -657,17 +657,25 @@ server <- function(input, output) {
     # standard year filter -----
     bats.sub <- bats %>% 
       filter( year %in% input$year, month %in% input$month )
+    
+    # assign data for sensor accuracy -----
+    #rv$bats.acc <- bats.sub
+    
     # make group column -----
     if( input$grouping == grouping.ops[1] ){ 
-      bats.sub <- bats.sub %>% mutate( group = AUTO.ID )
+      bats.sub <- bats.sub %>% 
+        mutate( group=Common, species=Scientific )
     } else if( input$grouping == grouping.ops[2] ){
-      bats.sub <- bats.sub %>% mutate( group = species_group )
+      bats.sub <- bats.sub %>% 
+        mutate( group=group_common, species=group_species )
     } else if( input$grouping == grouping.ops[3] ){
-      bats.sub <- bats.sub %>% mutate( group = obligate )
+      bats.sub <- bats.sub %>% 
+        mutate( group=obligate, species=obligate )
     }
     # grouping filter -----
     bats.sub <- bats.sub %>% filter( group %in% input$group )
-    # assign rv -----
+    
+    # assign main rv data -----
     rv$bats.sub <- bats.sub
     
   })
@@ -690,7 +698,7 @@ server <- function(input, output) {
         group_by(year) %>% 
         mutate( nSensors = length(unique(siteID)) )
       bats.yr <- bats.yr %>% 
-        group_by(year,group) %>% 
+        group_by(year,group,species) %>% 
         summarize( count=n(), relFreq=count/nSensors )
       bats.yr <- distinct(bats.yr)
     } else {
@@ -698,7 +706,7 @@ server <- function(input, output) {
         group_by(year,wrapV) %>% 
         mutate( nSensors = length(unique(siteID)) )
       bats.yr <- bats.yr %>% 
-        group_by(year,wrapV,group) %>% 
+        group_by(year,wrapV,group,species) %>% 
         summarize( count=n(), relFreq=count/nSensors )
       bats.yr <- distinct(bats.yr)
     }
@@ -730,10 +738,50 @@ server <- function(input, output) {
   # Seasonal (monthly) plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$monthly.plot <- renderPlot({
-    ggplot() +
+    
+    # set wrapV by input wrap var -----
+    if(input$monthly.wrapVar=='year'){ 
+      bats.mon <- rv$bats.sub %>% mutate(wrapV=year) }
+    if(input$monthly.wrapVar=='management'){ 
+      bats.mon <- rv$bats.sub %>% mutate(wrapV=habitat) }
+    
+    # summarize by appropriate groups -----
+    if(input$monthly.wrapVar == 'none'){
+      bats.mon <- rv$bats.sub %>% 
+        group_by(monthN,month) %>% 
+        mutate( nSensors = length(unique(siteID)) )
+      bats.mon <- bats.mon %>% 
+        group_by(monthN,month,group,species) %>% 
+        summarize( count=n(), relFreq=count/nSensors )
+    } else {
+      bats.mon <- bats.mon %>% 
+        group_by(monthN,month,wrapV) %>% 
+        mutate( nSensors = length(unique(siteID)) )
+      bats.mon <- bats.mon %>% 
+        group_by(monthN,month,wrapV,group,species) %>% 
+        summarize( count=n(), relFreq=count/nSensors )
+    }
+    bats.mon <- distinct(bats.mon)
+    
+    # make base plot -----
+    monthly.p <- ggplot( bats.mon, aes(x=monthN, y=relFreq, color=group) ) +
+      scale_x_discrete(limits=month.abb[1:12]) +
+      scale_fill_manual(values = cbPalette) +
       labs(title="Seasonal Bat Activity",
            x="Month", y="Relative Frequency",
            caption="Sewanee Bat Study, DataLab 2022")
+    
+    # add line geom -----
+    monthly.p <- monthly.p + geom_line()
+    
+    # wrap if appropriate -----
+    if(input$monthly.wrapVar != 'none'){
+      monthly.p <- monthly.p + facet_wrap(~wrapV)
+    }
+    
+    # plot -----
+    monthly.p
+    
   })#end seasonal plot ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
@@ -757,14 +805,14 @@ server <- function(input, output) {
         group_by(hour) %>% 
         mutate( nSensors = length(unique(siteID)) )
       bats.hr <- bats.hr %>% 
-        group_by(hour,group) %>% 
+        group_by(hour,group,species) %>% 
         summarize( count = n(), relFreq = count/nSensors )
     } else {
       bats.hr <- bats.hr %>% 
         group_by(hour, wrapV) %>% 
         mutate( nSensors = length(unique(siteID)) )
       bats.hr <- bats.hr %>% 
-        group_by(hour,wrapV,group) %>% 
+        group_by(hour,wrapV,group,species) %>% 
         summarize( count = n(), relFreq = count/nSensors )
     }
     
@@ -804,10 +852,52 @@ server <- function(input, output) {
   # Diversity (species) plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$diversity.plot <- renderPlot({
-    ggplot() +
-      labs(title="Bat Species Trends",
-           x="year/month", y="Proportion",
+    
+    # set wrapV by input wrap var -----
+    if(input$diversity.wrapVar=='management'){ 
+      bats.div <- rv$bats.sub %>% mutate(wrapV=habitat) }
+    
+    # summarize by appropriate groups -----
+    if(input$diversity.wrapVar=='none'){
+      bats.div <- rv$bats.sub %>% 
+        group_by(year) %>% 
+        mutate( total=n() )
+      bats.div <- bats.div %>% 
+        mutate( year=factor(year, levels=min(year):max(year)) ) %>% 
+        group_by(year,group,species) %>% 
+        summarise( prop = n()/total, 
+                   perc = prop*100 )
+    } else {
+      bats.div <- bats.div %>% 
+        group_by(year,wrapV) %>% 
+        mutate( total=n() )
+      bats.div <- bats.div %>% 
+        mutate( year=factor(year, levels=min(year):max(year)) ) %>% 
+        group_by(year,wrapV,group,species) %>% 
+        summarise( prop = n()/total, 
+                   perc = prop*100 )
+    }
+    bats.div <- distinct(bats.div)
+    
+    # make base plot -----
+    diversity.p <- ggplot( bats.div, aes(x=year, y=perc, fill=group) ) +
+      scale_fill_manual(values = cbPalette) +
+      labs(title='Bat Species Proportions',
+           x='Year', y='Percent of Total Activity',
            caption="Sewanee Bat Study, DataLab 2022")
+    
+    # add geom col -----
+    diversity.p <- diversity.p + geom_col()
+    
+    # wrap if appropriate -----
+    if(input$diversity.wrapVar != 'none'){
+      diversity.p <- diversity.p + facet_wrap(~wrapV)
+    }
+    
+    # plot with plotly -----
+    #ggplotly(diversity.p, tooltip=c("fill", "text"))
+    diversity.p
+    
   })#end diversity plot ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
