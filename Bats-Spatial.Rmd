@@ -10,32 +10,38 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-#load libraries and data
-library(tidyverse)
-library(lubridate)
+# basic read -----
+source('dataRead-bats.R')
+bats <- bats %>%  
+  rename( siteID = sensor) %>% 
+  select(-LATITUDE,-LONGITUDE)
+
+# sensor data read -----
+source('dataRead-sensorDates.R')
+  
+# join bats and sensor site data -----
+bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
+
 library(readxl)
-library(ggplot2)
-library(tidyverse)
-library(ggthemes)
+batspecies <- read_excel("BatSpecies.xlsx")
+#left join the 2 datasets
+bats<- left_join(bats,batspecies, by="AUTO.ID")
 
-bats <- readRDS('bats.RData')
-
+# group common names -----
 bats <- bats %>% 
-  mutate(year = year(DATE), 
-         monthN = month(DATE),
-         month = month.abb[monthN],
-         hour = hour(TIME),
-         sensor = paste(COMPARTMENT,SITE, sep='_') ) %>% 
-  filter( AUTO.ID != 'Noise' )
+  mutate( group_common = ifelse(ID_group=="MYOTIS", "Genus Myotis", Common),
+          group_common = ifelse(ID_group=="EPTFUS.LASNOC",
+                                "Big Brown Bat/Silver-haired Bat",group_common),
+          group_common = ifelse(ID_group=="LASBOR.NYCHUM",
+                                "Red Bat/Evening Bat", group_common) )
 
-
-# Any bat listed as CORROW should be listed as the secondary species
+# group scientific names -----
 bats <- bats %>% 
-  mutate( AUTO.ID = gsub("CORROW", 
-                         unlist(strsplit(ALTERNATES, split=';', fixed=TRUE))[1],
-                         AUTO.ID) )
-
-
+  mutate( group_species = ifelse(ID_group=="MYOTIS", "Myotis species", Scientific),
+          group_species = ifelse(ID_group=="EPTFUS.LASNOC",
+                                "Eptesicus fuscus/Lasionycteris noctivagans", group_species),
+          group_species = ifelse(ID_group=="LASBOR.NYCHUM",
+                                "Lasiurus borealis/Nycticeius humeralis", group_species) )
 ```
 
 ```{r fig.height=20}
@@ -71,14 +77,123 @@ ggplot(data=compart %>% filter(! AUTO.ID %in% c("NoId", "NoID", "Noise")), aes(x
 
 ```
 
+
+
+
+
+# DASHBOARD PREP
+
 ```{r}
-#load bat species and abbreviations excel sheet
-library(readxl)
-batspecies <- read_excel("BatSpecies.xlsx")
+# Universal inputs (grouping, group, year, month)
+# site.comp (vector - compartments)
+# site.wrapVar (single value - none, site)
+bad <- c('no.ID','Noise')
 
-#merge the 2 datasets 
-bats<-merge(bats,batspecies, by="AUTO.ID")
+# stand-in input variables -----
+input.grouping <- 'species group'
+input.group <- unique(bats$group_common)
+input.group <- input.group[-which(input.group%in%bad)]
+input.year <- c(2017:2022)
+input.month <- month.abb[1:12]
+site.wrapVar <- 'site'
+site.comp <- unique(bats$COMPARTMENT)
+site.granularity <- 'year'
 
+# colorblind palette -----
+cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#133139")
 ```
+
+```{r}
+# basic filter -----
+bats.sub <- bats %>% 
+  filter( year %in% input.year, month %in% input.month )
+
+# set grouping var column -----
+if(input.grouping=='species'){ 
+  bats.sub <- bats.sub %>% mutate(group=Common, species=Scientific) }
+if(input.grouping=='species group'){ 
+  bats.sub <- bats.sub %>% mutate(group=group_common, species=group_species) }
+if(input.grouping=='cave dependency'){ 
+  bats.sub <- bats.sub %>% mutate(group=obligate, species=obligate) }
+
+# group filter -----
+bats.sub <- bats.sub %>% 
+  filter( group %in% input.group )
+```
+
+```{r}
+# set granularity level -----
+if(site.granularity == 'year'){
+  bats.map <- bats.sub %>% mutate( div=year )
+} else if(site.granularity == 'month'){
+  bats.map <- bats.sub %>% 
+    mutate( div=as.Date(paste(year,month,1,sep='-')) )
+} else { bats.map <- bats.sub %>% mutate( div=DATE ) }
+
+# set wrapV by input wrap var -----
+if(site.wrapVar=='site'){ bats.map <- bats.map %>% mutate(wrapV=SITE) }
+
+# summarize by appropriate groups -----
+if(site.wrapVar == 'none'){
+  bats.map <- bats.map %>% 
+    group_by(COMPARTMENT,div) %>% 
+    mutate( nSensors = length(unique(siteID)) )
+  bats.map <- bats.map %>% 
+    group_by(COMPARTMENT,div,group,species) %>% 
+    summarize( count=n(), relFreq=count/nSensors )
+} else {
+  bats.map <- bats.map %>% 
+    group_by(COMPARTMENT,div,wrapV) %>% 
+    mutate( nSensors = length(unique(siteID)) )
+  bats.map <- bats.map %>% 
+    group_by(COMPARTMENT,div,group,species,wrapV) %>% 
+    summarize( count=n(), relFreq=count/nSensors )
+}
+bats.map <- distinct(bats.map)
+```
+
+```{r}
+# graphing loop -----
+for(comp in site.comp){
+  
+  # generate graph title -----
+  comp.T <- paste("Compartment",comp,"Bat Activity")
+  
+  # make base plot -----
+  site.p <- ggplot( bats.map %>% filter(COMPARTMENT==comp), 
+                    aes(x=div, y=relFreq, color=group) ) +
+    scale_fill_manual(values = cbPalette) +
+    labs(title=comp.T,
+         x="Date", y ="Relative Frequency",
+         caption="Sewanee Bat Study, DataLab 2022")
+  
+  # add line and point geoms -----
+  site.p <- site.p + geom_line() + geom_point()
+  
+  # make year graph neat -----
+  if(site.granularity == 'year'){
+    site.p <- site.p + 
+      scale_x_continuous( breaks = c(min(bats.map$div):max(bats.map$div)) )
+  }
+  
+  # wrap if appropriate -----
+  if(site.wrapVar != 'none'){
+    site.p <- site.p + facet_wrap(~wrapV)
+  }
+  
+  # plot -----
+  print(site.p)
+  
+}# end graphing loop
+
+# plot with plotly ----
+#ggplotly( monthly.p, hovertemplate=paste() )
+```
+
+
+
+
+
+
 
 
