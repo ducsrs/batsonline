@@ -25,13 +25,21 @@ batspecies <- read_excel("BatSpecies.xlsx")
 #left join the 2 datasets
 bats<- left_join(bats,batspecies, by="AUTO.ID")
 
-# group common names
+# group common names -----
 bats <- bats %>% 
-  mutate( group_common = ifelse(species_group=="MYOTIS", "Genus Myotis", Common),
-          group_common = ifelse(species_group=="EPTFUS.LASNOC",
-                                "Big Brown Bat/Silver-haired Bat", group_common),
-          group_common = ifelse(species_group=="LASBOR.NYCHUM",
+  mutate( group_common = ifelse(ID_group=="MYOTIS", "Genus Myotis", Common),
+          group_common = ifelse(ID_group=="EPTFUS.LASNOC",
+                                "Big Brown Bat/Silver-haired Bat",group_common),
+          group_common = ifelse(ID_group=="LASBOR.NYCHUM",
                                 "Red Bat/Evening Bat", group_common) )
+
+# group scientific names -----
+bats <- bats %>% 
+  mutate( group_species = ifelse(ID_group=="MYOTIS", "Myotis species", Scientific),
+          group_species = ifelse(ID_group=="EPTFUS.LASNOC",
+                                "Eptesicus fuscus/Lasionycteris noctivagans", group_species),
+          group_species = ifelse(ID_group=="LASBOR.NYCHUM",
+                                "Lasiurus borealis/Nycticeius humeralis", group_species) )
 ```
 
 # Diversity (species) Trends
@@ -213,7 +221,7 @@ bad <- c('no.ID','Noise')
 
 # stand-in input variables -----
 input.grouping <- 'species group'
-input.group <- unique(bats$species_group)
+input.group <- unique(bats$group_common)
 input.group <- input.group[-which(input.group%in%bad)]
 input.year <- c(2017:2022)
 input.month <- month.abb[1:12]
@@ -229,9 +237,12 @@ bats.sub <- bats %>%
   filter( year %in% input.year, month %in% input.month )
 
 # set grouping var column -----
-if(input.grouping=='species'){ bats.sub <- bats.sub %>% mutate(group=AUTO.ID) }
-if(input.grouping=='species group'){ bats.sub<-bats.sub%>%mutate(group=species_group) }
-if(input.grouping=='cave dependency'){ bats.sub <- bats.sub %>% mutate(group=obligate) }
+if(input.grouping=='species'){ 
+  bats.sub <- bats.sub %>% mutate(group=Common, species=Scientific) }
+if(input.grouping=='species group'){ 
+  bats.sub <- bats.sub %>% mutate(group=group_common, species=group_species) }
+if(input.grouping=='cave dependency'){ 
+  bats.sub <- bats.sub %>% mutate(group=obligate, species=obligate) }
 
 # group filter -----
 bats.sub <- bats.sub %>% 
@@ -239,7 +250,7 @@ bats.sub <- bats.sub %>%
 ```
 
 ```{r}
-# set wrap var column -----
+# set wrapV by input wrap var -----
 if(diversity.wrapVar=='management'){ bats.div <- bats.sub %>% mutate(wrapV=habitat) }
 
 # summarize by appropriate groups -----
@@ -249,7 +260,7 @@ if(diversity.wrapVar=='none'){
     mutate( total=n() )
   bats.div <- bats.div %>% 
     mutate( year=factor(year, levels=min(year):max(year)) ) %>% 
-    group_by(year,group,group_common) %>% 
+    group_by(year,group,species) %>% 
     summarise( prop = n()/total, 
                perc = prop*100 )
 } else {
@@ -258,7 +269,7 @@ if(diversity.wrapVar=='none'){
     mutate( total=n() )
   bats.div <- bats.div %>% 
     mutate( year=factor(year, levels=min(year):max(year)) ) %>% 
-    group_by(year,wrapV,group,group_common) %>% 
+    group_by(year,wrapV,group,species) %>% 
     summarise( prop = n()/total, 
                perc = prop*100 )
 }
@@ -267,14 +278,17 @@ bats.div <- distinct(bats.div)
 
 ```{r}
 # make base plot -----
-diversity.p <- ggplot( bats.div ) +
-  geom_col( aes( x=year, y=perc, fill=group_common, 
-                 text=paste0("Percentage: ",round(perc),"% ") ) )+
+diversity.p <- ggplot( bats.div, aes(x=year, y=perc, fill=group) ) +
+  #geom_col( aes( x=year, y=perc, fill=group, 
+  #               text=paste0("Percentage: ",round(perc),"% ") ) )+
   scale_fill_manual(values = cbPalette)+
   labs(title='Bat Species Proportions',
        x='Year', y='Percent of Total Activity',
        caption="Sewanee Bat Study, DataLab 2022",
        fill="Species Group")
+
+# add geom col -----
+diversity.p <- diversity.p + geom_col()
   
 # wrap if appropriate -----
 if(diversity.wrapVar != 'none'){
@@ -282,7 +296,7 @@ if(diversity.wrapVar != 'none'){
 }
 
 # plot with plotly -----
-#ggplotly(diversity.p, tooltip=c("fill", "perc", "spec"))
+#ggplotly(diversity.p, tooltip=c("fill", "text"))
 diversity.p
 ```
 
