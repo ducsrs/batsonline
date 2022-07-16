@@ -21,18 +21,59 @@ bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
 
 No.ID = c("Noise", "NoId", "NoID", "no.ID")
 
+# bat species -----
 library(readxl)
 batspecies <- read_excel("BatSpecies.xlsx")
 #left join the 2 datasets
 bats<- left_join(bats,batspecies, by="AUTO.ID")
 
-# group common names
+# group common names -----
 bats <- bats %>% 
-  mutate( group_common = ifelse(species_group=="MYOTIS", "Genus Myotis", Common),
-          group_common = ifelse(species_group=="EPTFUS.LASNOC",
-                                "Big Brown Bat/Silver-haired Bat", group_common),
-          group_common = ifelse(species_group=="LASBOR.NYCHUM",
+  mutate( group_common = ifelse(ID_group=="MYOTIS", "Genus Myotis", Common),
+          group_common = ifelse(ID_group=="EPTFUS.LASNOC",
+                                "Big Brown Bat/Silver-haired Bat",group_common),
+          group_common = ifelse(ID_group=="LASBOR.NYCHUM",
                                 "Red Bat/Evening Bat", group_common) )
+
+# group scientific names -----
+bats <- bats %>% 
+  mutate( group_species = ifelse(ID_group=="MYOTIS", "Myotis species", Scientific),
+          group_species = ifelse(ID_group=="EPTFUS.LASNOC",
+                                "Eptesicus fuscus/Lasionycteris noctivagans", group_species),
+          group_species = ifelse(ID_group=="LASBOR.NYCHUM",
+                                "Lasiurus borealis/Nycticeius humeralis", group_species) )
+
+# daily weather data -----
+weather.daily <- read_xlsx("SUD Weather Station.xlsx") %>%
+  rename( DATE = "Timestamp*",
+          AvgTemp='Air temp Avg (C)',
+          AvgWind='Wind Speed Avg (high) (m/S)' ) %>% 
+  select( DATE, AvgTemp, AvgWind )
+
+# hourly weather data -----
+weather.hourly <- read_xlsx("SUD Weather Station.xlsx", sheet=2) %>% 
+  rename( AvgTemp = `Air Temp Avg (C)`,
+          MaxWind = `wind speed (high) (m/s)`,
+          MinWind = `wind speed (low) (m/s)`,
+          rain = `Rain (mm)` ) %>% 
+  mutate( DATE = date(Timestamp),
+          year=year(Timestamp),
+          month=month.abb[month(Timestamp)],
+          hour=hour(Timestamp),
+          AvgWind = (MaxWind+MinWind)/2 ) %>% 
+  select( DATE, year, month, hour, AvgWind, AvgTemp)
+
+# recorded rain data -----
+rain.hourly <- read_xlsx("SUD Weather Station.xlsx", sheet = 3) %>% 
+  rename( rain.intensity = `Rain Intensity (mm/sec)` ) %>% 
+  mutate( DATE = date(Timestamp),
+          year=year(Timestamp),
+          month=month.abb[month(Timestamp)],
+          hour=hour(Timestamp) ) %>% 
+  select(-Timestamp)
+
+# weather join -----
+weather <- left_join( weather.hourly, rain.hourly, by=c('DATE','year','month','hour') )
 ```
 
 # Long-Term (yearly) and Climate (temperature/weather) Trends
@@ -195,12 +236,12 @@ bad <- c('no.ID','Noise')
 
 # stand-in input variables -----
 input.grouping <- 'species group'
-#input.group <- c("CORRAF","EPTFUS","LASBOR")
-input.group <- unique(bats$species_group)
+input.group <- unique(bats$group_common)
 input.group <- input.group[-which(input.group%in%bad)]
 input.year <- c(2017:2021)
 input.month <- month.abb[1:12]
 yearly.wrapVar <- 'management'
+yearly.weather <- c("rain","wind","temperature")
 
 # colorblind palette -----
 cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#133139")
@@ -213,22 +254,31 @@ bats.sub <- bats %>%
 
 # set grouping var column -----
 if(input.grouping=='species'){ 
-  bats.sub <- bats.sub %>% mutate( group=AUTO.ID, common=Common ) }
+  bats.sub <- bats.sub %>% mutate( group=Common, species=Scientific ) }
 if(input.grouping=='species group'){ 
-  bats.sub<-bats.sub %>% mutate( group=species_group, common=group_common) }
+  bats.sub<-bats.sub %>% mutate( group=group_common, species=group_species) }
 if(input.grouping=='cave dependency'){ 
-  bats.sub <- bats.sub %>% mutate( group=obligate, common=obligate ) }
+  bats.sub <- bats.sub %>% mutate( group=obligate, species=obligate ) }
 
 # group filter -----
 bats.sub <- bats.sub %>% 
   filter( group %in% input.group )
+
+# weather filter -----
+weather.sub <- weather %>% 
+  filter( year %in% input.year, month %in% input.month )
 ```
 
 ```{r}
+# base weather data -----
+weather.yr <- weather.sub %>% 
+  group_by(year) %>% 
+  summarize( AvgTemp = mean(AvgTemp, na.rm=TRUE),
+             AvgWind = mean(AvgWind, na.rm=TRUE),
+             rain.intensity = mean(rain.intensity, na.rm=TRUE))
+
 # set wrap var column -----
-if(yearly.wrapVar=='management'){ bats.yr <- bats.sub %>% 
-  mutate(wrapV=habitat) %>% 
-  filter( !is.na(habitat) ) }
+if(yearly.wrapVar=='management'){ bats.yr <- bats.sub %>% mutate(wrapV=habitat) }
 
 # summarize by appropriate groups -----
 if(yearly.wrapVar == 'none'){
@@ -236,7 +286,7 @@ if(yearly.wrapVar == 'none'){
     group_by(year) %>% 
     mutate( nSensors = length(unique(siteID)) )
   bats.yr <- bats.yr %>% 
-    group_by(year,group,common) %>% 
+    group_by(year,group,species) %>% 
     summarize( count=n(), relFreq=count/nSensors )
   bats.yr <- distinct(bats.yr)
 } else {
@@ -244,20 +294,51 @@ if(yearly.wrapVar == 'none'){
     group_by(year,wrapV) %>% 
     mutate( nSensors = length(unique(siteID)) )
   bats.yr <- bats.yr %>% 
-    group_by(year,wrapV,group,common) %>% 
+    group_by(year,wrapV,group,species) %>% 
     summarize( count=n(), relFreq=count/nSensors )
   bats.yr <- distinct(bats.yr)
 }
+
+# scale weather data -----
+# W = W*(maxA/maxW)
+temp.ratio <- max(bats.yr$relFreq)/max(weather.yr$AvgTemp)
+wind.ratio <- max(bats.yr$relFreq)/max(weather.yr$AvgWind)
+rain.ratio <- max(bats.yr$relFreq)/max(weather.yr$rain.intensity)
+weather.yr <- weather.yr %>% 
+  mutate( AvgTemp = AvgTemp*temp.ratio,
+          AvgWind = AvgWind*wind.ratio,
+          rain.intensity = rain.intensity*rain.ratio )
 ```
 
 ```{r}
+# weather plot -----
+#ggplot( weather.yr ) +
+#  geom_area( aes(x=year, y=AvgWind), fill='grey' )
+
 # make base plot -----
-yearly.p <- ggplot( bats.yr ) +
-  geom_line( aes(x=year, y=relFreq, color=common, text=paste("Group:",common)) ) +
+yearly.p <- ggplot() +
   scale_fill_manual(values = cbPalette) +
   labs(title="Yearly Bat Activity",
        x="Year", y ="Relative Frequency",
        caption="Sewanee Bat Study, DataLab 2022")
+
+# add weather -----
+if('rain' %in% yearly.weather){
+  yearly.p <- yearly.p + 
+    geom_area( data=weather.yr, aes(x=year, y=rain.intensity), fill='blue', alpha=0.1 )
+}
+if('wind' %in% yearly.weather){
+  yearly.p <- yearly.p + 
+    geom_area( data=weather.yr, aes(x=year, y=AvgWind), fill='yellow', alpha=0.1 )
+}
+if('temperature' %in% yearly.weather){
+  yearly.p <- yearly.p + 
+    geom_area( data=weather.yr, aes(x=year, y=AvgTemp), fill='red', alpha=0.1 )
+}
+
+# add bat activity -----
+yearly.p <- yearly.p +
+  geom_line( data=bats.yr, aes(x=year, y=relFreq, color=group) )
 
 # wrap if appropriate -----
 if(yearly.wrapVar != 'none'){

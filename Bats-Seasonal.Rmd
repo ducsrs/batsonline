@@ -343,17 +343,83 @@ ggplotly(bats.time.2, hovertemplate = paste())
 # DASHBOARD PREP
 
 ```{r}
+# basic read -----
+source('dataRead-bats.R')
+bats <- bats %>%  
+  rename( siteID = sensor) %>% 
+  select(-LATITUDE,-LONGITUDE)
+
+# sensor data read -----
+source('dataRead-sensorDates.R')
+  
+# join bats and sensor site data -----
+bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
+
+# bat species -----
+library(readxl)
+batspecies <- read_excel("BatSpecies.xlsx")
+#left join the 2 datasets
+bats<- left_join(bats,batspecies, by="AUTO.ID")
+
+# group common names -----
+bats <- bats %>% 
+  mutate( group_common = ifelse(ID_group=="MYOTIS", "Genus Myotis", Common),
+          group_common = ifelse(ID_group=="EPTFUS.LASNOC",
+                                "Big Brown Bat/Silver-haired Bat",group_common),
+          group_common = ifelse(ID_group=="LASBOR.NYCHUM",
+                                "Red Bat/Evening Bat", group_common) )
+
+# group scientific names -----
+bats <- bats %>% 
+  mutate( group_species = ifelse(ID_group=="MYOTIS", "Myotis species", Scientific),
+          group_species = ifelse(ID_group=="EPTFUS.LASNOC",
+                                "Eptesicus fuscus/Lasionycteris noctivagans", group_species),
+          group_species = ifelse(ID_group=="LASBOR.NYCHUM",
+                                "Lasiurus borealis/Nycticeius humeralis", group_species) )
+
+# hourly weather data -----
+weather.hourly <- read_xlsx("SUD Weather Station.xlsx", sheet=2) %>% 
+  rename( AvgTemp = `Air Temp Avg (C)`,
+          MaxWind = `wind speed (high) (m/s)`,
+          MinWind = `wind speed (low) (m/s)`,
+          rain = `Rain (mm)` ) %>% 
+  mutate( DATE = date(Timestamp),
+          year=year(Timestamp),
+          monthN=month(Timestamp),
+          month=month.abb[monthN],
+          hour=hour(Timestamp),
+          AvgWind = (MaxWind+MinWind)/2 ) %>% 
+  select( DATE, year, month, monthN, hour, AvgWind, AvgTemp)
+
+# recorded rain data -----
+rain.hourly <- read_xlsx("SUD Weather Station.xlsx", sheet = 3) %>% 
+  rename( rain.intensity = `Rain Intensity (mm/sec)` ) %>% 
+  mutate( DATE = date(Timestamp),
+          year=year(Timestamp),
+          monthN=month(Timestamp),
+          month=month.abb[monthN],
+          hour=hour(Timestamp) ) %>% 
+  select(-Timestamp)
+
+# weather join -----
+weather <- left_join( weather.hourly, rain.hourly, 
+                      by=c('DATE','year','month','monthN','hour') )
+```
+
+```{r}
 # Universal inputs (grouping, group, year, month)
 # monthly.weather (vector - rain, wind, temperature)
 # monthly.wrapVar (vector - none, year, management)
+bad <- c('no.ID','Noise')
 
 # stand-in input variables -----
-input.grouping <- 'species'
-input.group <- c("CORRAF","EPTFUS","LASBOR")
+input.grouping <- 'species group'
+input.group <- unique(bats$group_common)
+input.group <- input.group[-which(input.group%in%bad)]
 input.year <- c(2017:2022)
 input.month <- month.abb[1:12]
-# monthly.weather <- 'rain'
-monthly.wrapVar <- 'none'
+monthly.weather <- c("rain","wind","temperature")
+monthly.wrapVar <- 'year'
 
 # colorblind palette -----
 cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#133139")
@@ -362,20 +428,41 @@ cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", 
 ```{r}
 # basic filter -----
 bats.sub <- bats %>% 
-  filter( year %in% input.year, month %in% input.month ) %>% 
-  rename( siteID = sensor )
+  filter( year %in% input.year, month %in% input.month )
 
 # set grouping var column -----
-if(input.grouping=='species'){ bats.sub <- bats.sub %>% mutate(group=AUTO.ID) }
-if(input.grouping=='species group'){ bats.sub<-bats.sub%>%mutate(group=species_group) }
-if(input.grouping=='cave dependency'){ bats.sub <- bats.sub %>% mutate(group=obligate) }
+if(input.grouping=='species'){ 
+  bats.sub <- bats.sub %>% mutate( group=Common, species=Scientific ) }
+if(input.grouping=='species group'){ 
+  bats.sub<-bats.sub %>% mutate( group=group_common, species=group_species) }
+if(input.grouping=='cave dependency'){ 
+  bats.sub <- bats.sub %>% mutate( group=obligate, species=obligate ) }
 
 # group filter -----
 bats.sub <- bats.sub %>% 
   filter( group %in% input.group )
+
+# weather filter -----
+weather.sub <- weather %>% 
+  filter( year %in% input.year, month %in% input.month )
 ```
 
 ```{r}
+# base weather data -----
+if(monthly.wrapVar=='year'){
+  weather.mon <- weather.sub %>% 
+    group_by(year,month,monthN) %>% 
+    summarize( AvgTemp = mean(AvgTemp, na.rm=TRUE),
+               AvgWind = mean(AvgWind, na.rm=TRUE),
+               rain.intensity = mean(rain.intensity, na.rm=TRUE))
+} else {
+  weather.mon <- weather.sub %>% 
+  group_by(month,monthN) %>% 
+  summarize( AvgTemp = mean(AvgTemp, na.rm=TRUE),
+             AvgWind = mean(AvgWind, na.rm=TRUE),
+             rain.intensity = mean(rain.intensity, na.rm=TRUE))
+}
+
 # set wrap var column -----
 if(monthly.wrapVar=='year'){ bats.mon <- bats.sub %>% mutate(wrapV=year) }
 if(monthly.wrapVar=='management'){ bats.mon <- bats.sub %>% mutate(wrapV=habitat) }
@@ -398,17 +485,56 @@ if(monthly.wrapVar == 'none'){
     summarize( count=n(), relFreq=count/nSensors )
   bats.mon <- distinct(bats.mon)
 }
+
+# scale weather data -----
+temp.ratio <- max(bats.mon$relFreq)/max(weather.mon$AvgTemp, na.rm=TRUE)
+wind.ratio <- max(bats.mon$relFreq)/max(weather.mon$AvgWind, na.rm=TRUE)
+rain.ratio <- max(bats.mon$relFreq)/max(weather.mon$rain.intensity, na.rm=TRUE)
+weather.mon <- weather.mon %>% 
+  mutate( AvgTemp = AvgTemp*temp.ratio,
+          AvgWind = AvgWind*wind.ratio,
+          rain.intensity = rain.intensity*rain.ratio )
+
+# join bat and weather data -----
+if(monthly.wrapVar=='year'){
+  weather.mon <- weather.mon %>% mutate(wrapV=year)
+  #bats.mon <- left_join(bats.mon, weather.mon, by=c('wrapV','month','monthN'))
+} #else {
+#  weather.mon <- weather.mon %>% mutate(wrapV=year)
+#  bats.mon <- left_join(bats.mon, weather.mon, by=c('month','monthN'))
+#}
 ```
 
 ```{r}
 # make base plot -----
-monthly.p <- ggplot( bats.mon ) +
-  geom_line( aes(x=monthN, y=relFreq, color=group, text=paste("Group:",group)) ) +
+monthly.p <- ggplot() +
   scale_x_discrete(limits=month.abb[1:12]) +
   scale_fill_manual(values = cbPalette) +
   labs(title="Monthly Bat Activity",
        x="Month", y ="Relative Frequency",
        caption="Sewanee Bat Study, DataLab 2022")
+
+# add weather -----
+if('rain' %in% monthly.weather){
+  monthly.p <- monthly.p + 
+    geom_area( data=weather.mon, 
+               aes(x=monthN, y=rain.intensity), fill='blue', alpha=0.1 )
+}
+if('wind' %in% monthly.weather){
+  monthly.p <- monthly.p + 
+    geom_area( data=weather.mon, 
+               aes(x=monthN, y=AvgWind), fill='yellow', alpha=0.1 )
+}
+if('temperature' %in% monthly.weather){
+  monthly.p <- monthly.p + 
+    geom_area( data=weather.mon, 
+               aes(x=monthN, y=AvgTemp), fill='red', alpha=0.1 )
+}
+
+# add activity lines -----
+monthly.p <- monthly.p +
+  geom_line( data=bats.mon, 
+             aes(x=monthN, y=relFreq, color=group, text=paste("Group:",group)) )
 
 # wrap if appropriate -----
 if(monthly.wrapVar != 'none'){
@@ -416,7 +542,8 @@ if(monthly.wrapVar != 'none'){
 }
 
 # plot with plotly ----
-ggplotly( monthly.p, hovertemplate=paste() )
+#ggplotly( monthly.p, hovertemplate=paste() )
+monthly.p
 ```
 
 
