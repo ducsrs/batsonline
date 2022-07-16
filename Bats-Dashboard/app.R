@@ -527,126 +527,6 @@ server <- function(input, output) {
   })#end group UI ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  # Long-Term (yearly) group UI -----
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  #output$yearly.group.UI <- renderUI({
-  #  switch(input$yearly.grouping,
-  #         "species"=selectInput(inputId="yearly.group", 
-  #                               label="Select species:",
-  #                               choices = c('species'), 
-  #                               multiple = TRUE
-  #         ),#end species grouping UI
-  #         "species group"=selectInput(inputId="yearly.group", 
-  #                                     label="Select species group(s):",
-  #                                     choices = c('species'), 
-  #                                     multiple = TRUE
-  #         ),#end species group grouping UI
-  #         "cave dependency"=selectInput(inputId="yearly.group", 
-  #                                       label="Select cave status:",
-  #                                       choices = c('dependent','not dependent'), 
-  #                                       multiple = TRUE
-  #         )#end cave dependency grouping UI
-  #  )#end grouping switch
-  #})#end long-term group UI ---
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  # Seasonal (monthly) group UI -----
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  #output$monthly.group.UI <- renderUI({
-  #  switch(input$monthly.grouping,
-  #         "species"=selectInput(inputId="monthly.group", 
-  #                               label="Select species:",
-  #                               choices = c('species'), 
-  #                               multiple = TRUE
-  #         ),#end species grouping UI
-  #         "species group"=selectInput(inputId="monthly.group", 
-  #                                     label="Select species group(s):",
-  #                                     choices = c('species'), 
-  #                                     multiple = TRUE
-  #         ),#end species group grouping UI
-  #         "cave dependency"=selectInput(inputId="monthly.group", 
-  #                                       label="Select cave status:",
-  #                                       choices = c('dependent','not dependent'), 
-  #                                       multiple = TRUE
-  #         )#end cave dependency grouping UI
-  #  )#end grouping switch
-  #})#end seasonal group UI ---
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  # Circadian (hourly) group UI -----
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  #output$hourly.group.UI <- renderUI({
-  #  switch(input$hourly.grouping,
-  #         "species"=selectInput(inputId="hourly.group", 
-  #                               label="Select species:",
-  #                               choices = c('species'), 
-  #                               multiple = TRUE
-  #         ),#end species grouping UI
-  #         "species group"=selectInput(inputId="hourly.group", 
-  #                                     label="Select species group(s):",
-  #                                     choices = c('species groups'), 
-  #                                     multiple = TRUE
-  #         ),#end species group grouping UI
-  #         "cave dependency"=selectInput(inputId="hourly.group", 
-  #                                       label="Select cave status:",
-  #                                       choices = c('dependent','not dependent'), 
-  #                                       multiple = TRUE
-  #         )#end cave dependency grouping UI
-  #  )#end grouping switch
-  #})#end circadian group UI ---
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  # Spatial (site) group UI -----
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  #output$site.group.UI <- renderUI({
-  #  switch(input$site.grouping,
-  #         "species"=selectInput(inputId="site.group", 
-  #                               label="Select species:",
-  #                               choices = c('species'), 
-  #                               multiple = TRUE
-  #         ),#end species grouping UI
-  #         "species group"=selectInput(inputId="site.group", 
-  #                                     label="Select species group(s):",
-  #                                     choices = c('species groups'), 
-  #                                     multiple = TRUE
-  #         ),#end species group grouping UI
-  #         "cave dependency"=selectInput(inputId="site.group", 
-  #                                       label="Select cave status:",
-  #                                       choices = c('dependent','not dependent'), 
-  #                                       multiple = TRUE
-  #         )#end cave dependency grouping UI
-  #  )#end grouping switch
-  #})#end spatial group UI ---
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  # Diversity (species) group UI -----
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  #output$diversity.group.UI <- renderUI({
-  #  switch(input$diversity.grouping,
-  #         "species"=selectInput(inputId="diversity.group", 
-  #                               label="Select species:",
-  #                               choices = c('species'), 
-  #                               multiple = TRUE
-  #         ),#end species grouping UI
-  #         "species group"=selectInput(inputId="diversity.group", 
-  #                                     label="Select species group(s):",
-  #                                     choices = c('species groups'), 
-  #                                     multiple = TRUE
-  #         ),#end species group grouping UI
-  #         "cave dependency"=selectInput(inputId="diversity.group", 
-  #                                       label="Select cave status:",
-  #                                       choices = c('dependent','not dependent'), 
-  #                                       multiple = TRUE
-  #         )#end cave dependency grouping UI
-  #  )#end grouping switch
-  #})#end diversity group UI ---
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  
   
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # reactive data -----
@@ -654,12 +534,12 @@ server <- function(input, output) {
   rv <- reactiveValues()
   observe({
     
-    # standard year filter -----
+    # standard bats filter -----
     bats.sub <- bats %>% 
       filter( year %in% input$year, month %in% input$month )
     
     # assign data for sensor accuracy -----
-    #rv$bats.acc <- bats.sub
+    rv$bats.acc <- bats.sub
     
     # make group column -----
     if( input$grouping == grouping.ops[1] ){ 
@@ -678,6 +558,10 @@ server <- function(input, output) {
     # assign main rv data -----
     rv$bats.sub <- bats.sub
     
+    # filter and assign weather data -----
+    rv$weather.sub <- weather %>% 
+      filter( year %in% input$year, month %in% input$month )
+    
   })
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
@@ -686,6 +570,13 @@ server <- function(input, output) {
   # Long-Term (yearly) plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$yearly.plot <- renderPlot({
+    
+    # summarize weather data -----
+    weather.yr <- rv$weather.sub %>% 
+      group_by(year) %>% 
+      summarize( AvgTemp = mean(AvgTemp, na.rm=TRUE),
+                 AvgWind = mean(AvgWind, na.rm=TRUE),
+                 rain.intensity = mean(rain.intensity, na.rm=TRUE))
     
     # set wrapV by input wrap var -----
     if(input$yearly.wrapVar=='management'){ 
@@ -711,15 +602,42 @@ server <- function(input, output) {
       bats.yr <- distinct(bats.yr)
     }
     
+    # scale weather data -----
+    yr.temp.ratio <- max(bats.yr$relFreq)/max(weather.yr$AvgTemp)
+    yr.wind.ratio <- max(bats.yr$relFreq)/max(weather.yr$AvgWind)
+    yr.rain.ratio <- max(bats.yr$relFreq)/max(weather.yr$rain.intensity)
+    weather.yr <- weather.yr %>% 
+      mutate( AvgTemp = AvgTemp*yr.temp.ratio,
+              AvgWind = AvgWind*yr.wind.ratio,
+              rain.intensity = rain.intensity*yr.rain.ratio )
+    
     # make base plot -----
-    yearly.p <- ggplot(bats.yr, aes(x=year, y=relFreq, color=group) ) +
+    yearly.p <- ggplot() +
       scale_fill_manual(values = cbPalette) +
       labs(title="Yearly Bat Activity",
            x="Year", y ="Relative Frequency",
            caption="Sewanee Bat Study, DataLab 2022")
     
-    # add line geom -----
-    yearly.p <- yearly.p + geom_line()
+    # add weather geom -----
+    if('rain' %in% input$yearly.weather){
+      yearly.p <- yearly.p + 
+        geom_area( data=weather.yr, 
+                   aes(x=year, y=rain.intensity), fill='blue', alpha=0.1 )
+    }
+    if('wind' %in% input$yearly.weather){
+      yearly.p <- yearly.p + 
+        geom_area( data=weather.yr, 
+                   aes(x=year, y=AvgWind), fill='yellow', alpha=0.1 )
+    }
+    if('temperature' %in% input$yearly.weather){
+      yearly.p <- yearly.p + 
+        geom_area( data=weather.yr, 
+                   aes(x=year, y=AvgTemp), fill='red', alpha=0.1 )
+    }
+    
+    # add activity line geom -----
+    yearly.p <- yearly.p + 
+      geom_line( data=bats.yr, aes(x=year, y=relFreq, color=group) )
     
     # wrap if appropriate -----
     if(input$yearly.wrapVar != 'none'){
@@ -738,6 +656,21 @@ server <- function(input, output) {
   # Seasonal (monthly) plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   output$monthly.plot <- renderPlot({
+    
+    # base weather data -----
+    if(input$monthly.wrapVar=='year'){
+      weather.mon <- rv$weather.sub %>% 
+        group_by(year,month,monthN) %>% 
+        summarize( AvgTemp = mean(AvgTemp, na.rm=TRUE),
+                   AvgWind = mean(AvgWind, na.rm=TRUE),
+                   rain.intensity = mean(rain.intensity, na.rm=TRUE))
+    } else {
+      weather.mon <- rv$weather.sub %>% 
+        group_by(month,monthN) %>% 
+        summarize( AvgTemp = mean(AvgTemp, na.rm=TRUE),
+                   AvgWind = mean(AvgWind, na.rm=TRUE),
+                   rain.intensity = mean(rain.intensity, na.rm=TRUE))
+    }
     
     # set wrapV by input wrap var -----
     if(input$monthly.wrapVar=='year'){ 
@@ -763,16 +696,48 @@ server <- function(input, output) {
     }
     bats.mon <- distinct(bats.mon)
     
+    # scale weather data -----
+    mon.temp.ratio <- max(bats.mon$relFreq)/max(weather.mon$AvgTemp, na.rm=TRUE)
+    mon.wind.ratio <- max(bats.mon$relFreq)/max(weather.mon$AvgWind, na.rm=TRUE)
+    mon.rain.ratio <- max(bats.mon$relFreq)/max(weather.mon$rain.intensity, na.rm=TRUE)
+    weather.mon <- weather.mon %>% 
+      mutate( AvgTemp = AvgTemp*mon.temp.ratio,
+              AvgWind = AvgWind*mon.wind.ratio,
+              rain.intensity = rain.intensity*mon.rain.ratio )
+    
+    # for the year wrap -----
+    if(input$monthly.wrapVar=='year'){
+      weather.mon <- weather.mon %>% mutate(wrapV=year) }
+    
     # make base plot -----
-    monthly.p <- ggplot( bats.mon, aes(x=monthN, y=relFreq, color=group) ) +
+    monthly.p <- ggplot() +
       scale_x_discrete(limits=month.abb[1:12]) +
       scale_fill_manual(values = cbPalette) +
+      theme(axis.text.x = element_text(angle = 90)) +
       labs(title="Seasonal Bat Activity",
            x="Month", y="Relative Frequency",
            caption="Sewanee Bat Study, DataLab 2022")
     
-    # add line geom -----
-    monthly.p <- monthly.p + geom_line()
+    # add weather -----
+    if('rain' %in% input$monthly.weather){
+      monthly.p <- monthly.p + 
+        geom_area( data=weather.mon, 
+                   aes(x=monthN, y=rain.intensity), fill='blue', alpha=0.1 )
+    }
+    if('wind' %in% input$monthly.weather){
+      monthly.p <- monthly.p + 
+        geom_area( data=weather.mon, 
+                   aes(x=monthN, y=AvgWind), fill='yellow', alpha=0.1 )
+    }
+    if('temperature' %in% input$monthly.weather){
+      monthly.p <- monthly.p + 
+        geom_area( data=weather.mon, 
+                   aes(x=monthN, y=AvgTemp), fill='red', alpha=0.1 )
+    }
+    
+    # add activity line geom -----
+    monthly.p <- monthly.p + 
+      geom_line( data=bats.mon, aes(x=monthN, y=relFreq, color=group) )
     
     # wrap if appropriate -----
     if(input$monthly.wrapVar != 'none'){
@@ -975,6 +940,7 @@ server <- function(input, output) {
     
     # summarize number of sites -----
     sampling.days <- sensorDates %>% 
+      filter( !is.na(project) | !is.na(monitor) ) %>% 
       group_by(div) %>% 
       summarize( trapNights = n() )
     
@@ -1005,14 +971,14 @@ server <- function(input, output) {
     
     # set wrapV by the input wrap var -----
     if(input$sensor.wrapVar == 'year'){
-      bats.monitor <- rv$bats.sub %>% mutate( wrapV=year)
+      bats.monitor <- rv$bats.acc %>% mutate( wrapV=year)
     } else if(input$sensor.wrapVar == 'month'){
-      bats.monitor <- rv$bats.sub %>% mutate( wrapV=month)
+      bats.monitor <- rv$bats.acc %>% mutate( wrapV=month)
     } 
     
     # summarize by appropriate groups -----
     if(input$sensor.wrapVar == 'none'){
-      bats.monitor <- rv$bats.sub %>% 
+      bats.monitor <- rv$bats.acc %>% 
         group_by(monitor) %>% 
         summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
                    unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
@@ -1065,14 +1031,14 @@ server <- function(input, output) {
     
     # set wrapV by the input wrap var -----
     if(input$sensor.wrapVar == 'year'){
-      bats.mic <- rv$bats.sub %>% mutate( wrapV=year)
+      bats.mic <- rv$bats.acc %>% mutate( wrapV=year)
     } else if(input$sensor.wrapVar == 'month'){
-      bats.mic <- rv$bats.sub %>% mutate( wrapV=month)
+      bats.mic <- rv$bats.acc %>% mutate( wrapV=month)
     } 
     
     # summarize by appropriate groups -----
     if(input$sensor.wrapVar == 'none'){
-      bats.mic <- rv$bats.sub %>% 
+      bats.mic <- rv$bats.acc %>% 
         group_by(mic) %>% 
         summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
                    unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
