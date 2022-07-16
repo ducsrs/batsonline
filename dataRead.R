@@ -72,6 +72,7 @@ for(i in 1:nrow(sensors) ){
   }
   sensorDates <- rbind(sensorDates,temp)
 }
+sensorDates <- distinct(sensorDates)
 
 # join bats and sensor site data -----
 bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
@@ -109,25 +110,32 @@ bats <- bats %>%
 
 #--WEATHER--###################################################################
 
-# daily weather data -----
-weather <- read_xlsx("../SUD Weather Station.xlsx") %>%
-  dplyr::rename(DATE = "Timestamp*",
-                AvgTemp='Air temp Avg (C)',
-                Highest_Temp_Time='Time Air Temp Max',
-                MaxTemp='Air Temp Max (C)',
-                MinTemp='Air Temp Min',
-                MaxWind='Wind Speed Max (low) (m/s)',
-                AvgWind='Wind Speed Avg (high) (m/S)',
-                MinWind='Wind Speed Min (low) (m/s)')
-
 # hourly weather data -----
-hourly <- read_xlsx("../SUD Weather Station.xlsx", sheet=2) %>% 
-  mutate( DATE=date(Timestamp),
+weather.hourly <- read_xlsx("../SUD Weather Station.xlsx", sheet=2) %>% 
+  rename( AvgTemp = `Air Temp Avg (C)`,
+          MaxWind = `wind speed (high) (m/s)`,
+          MinWind = `wind speed (low) (m/s)`,
+          rain = `Rain (mm)` ) %>% 
+  mutate( DATE = date(Timestamp),
+          year=year(Timestamp),
           monthN=month(Timestamp),
-          month = month.abb[monthN],
-          year=year(Timestamp) )
+          month=month.abb[monthN],
+          hour=hour(Timestamp),
+          AvgWind = (MaxWind+MinWind)/2 ) %>% 
+  select( DATE, year, month, monthN, hour, AvgWind, AvgTemp)
 
 # recorded rain data -----
-rain <- read_xlsx("../SUD Weather Station.xlsx", sheet = 3)
+rain.hourly <- read_xlsx("../SUD Weather Station.xlsx", sheet = 3) %>% 
+  rename( rain.intensity = `Rain Intensity (mm/sec)` ) %>% 
+  mutate( DATE = date(Timestamp),
+          year=year(Timestamp),
+          monthN=month(Timestamp),
+          month=month.abb[monthN],
+          hour=hour(Timestamp) ) %>% 
+  select(-Timestamp)
+
+# weather join -----
+weather <- left_join( weather.hourly, rain.hourly, 
+                      by=c('DATE','year','month','monthN','hour') )
 
 
