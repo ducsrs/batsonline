@@ -128,48 +128,47 @@ ui <- dashboardPage(
                             Sustainability and Domain Management."),
                      hr(),
                      h2('Key Terms & Definitions:'),
-                     p("Cave Obligate means that a particular species of bat 
-                     requires a cave year-round to roost in. Cave obligate bat 
-                     species are the most vulnerable to white-nose syndrome."),
-                     p("Non-Cave Obligate means that a species of a bat does 
-                     not require a cave at all, and may rarely/never use one. 
-                     These bats live primarily in the forest instead."),
-                     p("Seasonal Cave Obligate means that a species of bat 
-                     requires a cave for hibernation only and spends the warmer 
-                     months roosting in the forest."),
-                     p("Hibernacula refers to the shelter that animals rest 
-                     in caves during hibernation or estivation."),
-                     p("Estivation is the lethargy or dormancy of an animal 
-                     during a hot and/or dry period."),
+                     p( strong(em("Cave Obligate")), 
+                     "means that a particular species of bat requires a cave 
+                     year-round to roost in. Cave obligate bat species are the 
+                     most vulnerable to white-nose syndrome."),
+                     p( strong(em("Non Cave Obligate")),
+                     "means that a species of a bat does not require a cave at 
+                     all, and may rarely/never use one. These bats live 
+                     primarily in the forest instead."),
+                     p( strong(em("Seasonal Cave Obligate")),
+                     "means that a species of bat requires a cave for 
+                     hibernation only and spends the warmer months roosting 
+                     in the forest."),
                      hr(),
                      h2('Bats of Sewanee:'),
                      img(src='Species.png', width="100%", height="auto"),
-                     br(),tags$a(href='https://en.wikipedia.org/wiki/Big_brown_bat',
-                                 "Big Brown Bat"),
-                     br(),tags$a(href='https://en.wikipedia.org/wiki/Eastern_small-footed_myotis',
-                                 "Eastern Small-footed Bat"),
-                     br(),tags$a(href='https://en.wikipedia.org/wiki/Evening_bat',
-                                 "Evening Bat"),
-                     br(),tags$a(href='https://en.wikipedia.org/wiki/Gray_bat',
-                                 "Gray Bat"),
-                     br(),tags$a(href='https://en.wikipedia.org/wiki/Hoary_bat',
-                                 "Hoary Bat"),
-                     br(),tags$a(href='https://en.wikipedia.org/wiki/Indiana_bat',
-                                 "Indiana Bat"),
-                     br(),tags$a(href='https://en.wikipedia.org/wiki/Little_brown_bat',
-                                 "Little Brown Bat"),
-                     br(),tags$a(href='https://en.wikipedia.org/wiki/Myotis_septentrionalis',
-                                 "Northern Long-eared Bat"),
-                     br(),tags$a(href='https://en.wikipedia.org/wiki/Rafinesque%27s_big-eared_bat',
-                                 "Rafinesque's Big-eared Bat"),
-                     br(),tags$a(href='https://en.wikipedia.org/wiki/Eastern_red_bat',
-                                 "Red Bat"),
-                     br(),tags$a(href='https://en.wikipedia.org/wiki/Silver-haired_bat',
-                                 "Silver-haired Bat"),
-                     br(),tags$a(href='https://en.wikipedia.org/wiki/Southeastern_myotis',
-                                 "Southeastern Myotis"),
-                     br(),tags$a(href='https://en.wikipedia.org/wiki/Tricolored_bat',
-                                 "Tri-colored Bat"),
+                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Big_brown_bat',
+                     #            "Big Brown Bat"),
+                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Eastern_small-footed_myotis',
+                     #            "Eastern Small-footed Bat"),
+                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Evening_bat',
+                     #            "Evening Bat"),
+                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Gray_bat',
+                     #            "Gray Bat"),
+                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Hoary_bat',
+                     #            "Hoary Bat"),
+                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Indiana_bat',
+                     #            "Indiana Bat"),
+                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Little_brown_bat',
+                     #            "Little Brown Bat"),
+                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Myotis_septentrionalis',
+                     #            "Northern Long-eared Bat"),
+                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Rafinesque%27s_big-eared_bat',
+                     #            "Rafinesque's Big-eared Bat"),
+                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Eastern_red_bat',
+                     #            "Red Bat"),
+                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Silver-haired_bat',
+                     #            "Silver-haired Bat"),
+                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Southeastern_myotis',
+                     #            "Southeastern Myotis"),
+                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Tricolored_bat',
+                     #            "Tri-colored Bat"),
                      hr(),
                      h2('Land Management Practices:'),
                      "Our land management strategies are currently broken up 
@@ -230,19 +229,27 @@ ui <- dashboardPage(
                        box( title="Spatial Trends", width=NULL,
                             solidHeader=TRUE, status='primary',
                             collapsible=TRUE, collapsed=TRUE,
-                            "[Explain Spatial tab]"
+                            "This tab will display the annual bat activity in
+                            any given geographical compartment, with the option
+                            to compare across sampling sites."
                        ),#end spatial summary
                        
                        box( title="Diversity Trends", width=NULL,
                             solidHeader=TRUE, status='primary',
                             collapsible=TRUE, collapsed=TRUE,
-                            "[Explain Diversity tab]"
+                            "This tab will display the proportion of bat 
+                            activity accounted for by each species in each year,
+                            with the option to compare across forest management
+                            types."
                        ),#end diversity summary
                        
                        box( title="Sampling Activity", width=NULL,
                             solidHeader=TRUE, status='primary',
                             collapsible=TRUE, collapsed=TRUE,
-                            "[Explain Sampling tab]"
+                            "This tab will display a graph of sampling activity 
+                            over time, as well as the proportions of noise and
+                            unidentifiable bat calls for each sensor and 
+                            microphone."
                        )#end sampling summary
                        
                 )#end tabs column
