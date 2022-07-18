@@ -109,17 +109,90 @@ ui <- dashboardPage(
                 box( title="About the Sewanee Bat Study", width=9,
                      solidHeader=TRUE, collapsible=TRUE, status='primary',
                      h1("Welcome!"), 
-                     "Bats are a vital part of ecosystems and have been on the 
-                     decline due to one of the worst wildlife diseases in modern 
-                     history, white nose syndrome. Sewanee Bat Study has collected 
-                     years of data on the behavior and habitats of local 
-                     cave-dwelling bat species. We are analyzing the data and 
-                     creating a dashboard to help make better data-driven forest 
-                     management decisions that will help control the spread of 
-                     white nose syndrome.",
+                     "Bats are a vital part of ecosystems, but many species are 
+                     declining due to 'white-nose syndrome', one of the worst 
+                     wildlife diseases in modern history. Dr. Amy Turner and 
+                     her team have worked together over the last six years on 
+                     the Sewanee Bat Study to monitor Sewanee’s bat populations 
+                     and make land management decisions in an effort to 
+                     conserve. The goals of this project include: analyzing the 
+                     trends in frequencies in bat activity across time and 
+                     management areas to see which locations are crucial for 
+                     bats, what land management practices are harmful or 
+                     helpful, and what species seem to be thriving or not. We 
+                     are analyzing the data and creating a dashboard to help 
+                     make data-driven forest management decisions in 
+                     collaboration with",
+                     tags$a(href='https://new.sewanee.edu/offices/university-offices/environmental-stewardship-sustainability/',
+                            "The Office of Environmental Stewardship and 
+                            Sustainability and Domain Management."),
+                     hr(),
+                     h2('Key Terms & Definitions:'),
+                     p("Cave Obligate means that a particular species of bat 
+                     requires a cave year-round to roost in. Cave obligate bat 
+                     species are the most vulnerable to white-nose syndrome."),
+                     p("Non-Cave Obligate means that a species of a bat does 
+                     not require a cave at all, and may rarely/never use one. 
+                     These bats live primarily in the forest instead."),
+                     p("Seasonal Cave Obligate means that a species of bat 
+                     requires a cave for hibernation only and spends the warmer 
+                     months roosting in the forest."),
+                     p("Hibernacula refers to the shelter that animals rest 
+                     in caves during hibernation or estivation."),
+                     p("Estivation is the lethargy or dormancy of an animal 
+                     during a hot and/or dry period."),
                      hr(),
                      h2('Bats of Sewanee:'),
-                     "[summarize bat species]"
+                     img(src='Species.png', width="100%", height="auto"),
+                     br(),tags$a(href='https://en.wikipedia.org/wiki/Big_brown_bat',
+                                 "Big Brown Bat"),
+                     br(),tags$a(href='https://en.wikipedia.org/wiki/Eastern_small-footed_myotis',
+                                 "Eastern Small-footed Bat"),
+                     br(),tags$a(href='https://en.wikipedia.org/wiki/Evening_bat',
+                                 "Evening Bat"),
+                     br(),tags$a(href='https://en.wikipedia.org/wiki/Gray_bat',
+                                 "Gray Bat"),
+                     br(),tags$a(href='https://en.wikipedia.org/wiki/Hoary_bat',
+                                 "Hoary Bat"),
+                     br(),tags$a(href='https://en.wikipedia.org/wiki/Indiana_bat',
+                                 "Indiana Bat"),
+                     br(),tags$a(href='https://en.wikipedia.org/wiki/Little_brown_bat',
+                                 "Little Brown Bat"),
+                     br(),tags$a(href='https://en.wikipedia.org/wiki/Myotis_septentrionalis',
+                                 "Northern Long-eared Bat"),
+                     br(),tags$a(href='https://en.wikipedia.org/wiki/Rafinesque%27s_big-eared_bat',
+                                 "Rafinesque's Big-eared Bat"),
+                     br(),tags$a(href='https://en.wikipedia.org/wiki/Eastern_red_bat',
+                                 "Red Bat"),
+                     br(),tags$a(href='https://en.wikipedia.org/wiki/Silver-haired_bat',
+                                 "Silver-haired Bat"),
+                     br(),tags$a(href='https://en.wikipedia.org/wiki/Southeastern_myotis',
+                                 "Southeastern Myotis"),
+                     br(),tags$a(href='https://en.wikipedia.org/wiki/Tricolored_bat',
+                                 "Tri-colored Bat"),
+                     hr(),
+                     h2('Land Management Practices:'),
+                     "Our land management strategies are currently broken up 
+                     into three categories: Managed, Unmanaged, and Cove. 
+                     Managed land means that the land has experienced some type 
+                     of alteration, such as a controlled burn or logging. 
+                     Unmanaged land indicates that the land hasn’t received any 
+                     management for several years. Coves are a separate entity, 
+                     as it’s a small bay or inlet, and cannot be managed in the 
+                     same ways that forest land can.", 
+                     hr(),
+                     h2('Further resources:'),
+                     tags$a(href='http://www.tnbwg.org',
+                            "Tennessee Bat Working Group"),
+                     br(),
+                     tags$a(href='https://www.nabatmonitoring.org',
+                            "The North American Bat Monitoring Program"),
+                     br(),
+                     tags$a(href='https://www.tn.gov/twra/wildlife-management-areas/cumberland-plateau-r3/oak-ridge-wma.html',
+                            "The Tennessee Wildlife Resources Agency"),
+                     br(),
+                     tags$a(href='https://www.fws.gov',
+                            "The United States Fish and Wildlife Service")
                 ),#end about box
                 
                 # tab summaries column -----
@@ -128,19 +201,30 @@ ui <- dashboardPage(
                        box( title="Long-Term Trends", width=NULL,
                             solidHeader=TRUE, status='primary',
                             collapsible=TRUE, collapsed=TRUE,
-                            "[Explain Long-Term tab]"
+                            "This tab will display an overview of bat activity 
+                            trends across all recorded years, with the option
+                            to compare across forest management types. Also
+                            available are optional weather overlays tracking 
+                            average wind, rain, and temperature in each year."
                        ),#end long-term summary
                        
                        box( title="Seasonal Trends", width=NULL,
                             solidHeader=TRUE, status='primary',
                             collapsible=TRUE, collapsed=TRUE,
-                            "[Explain Seasonal tab]"
+                            "This tab will display bat activity trends by month 
+                            of the year, with the option to compare across years 
+                            or forest management types. Also available are 
+                            optional weather overlays tracking the average 
+                            wind, rain, and temperature in each month."
                        ),#end seasonal summary
                        
                        box( title="Circadian Trends", width=NULL,
                             solidHeader=TRUE, status='primary',
                             collapsible=TRUE, collapsed=TRUE,
-                            "[Explain Circadian tab]"
+                            "This tab will display bat activity trends by hour 
+                            of the day on a 24-hour cycle, with the option to 
+                            compare across months, years, or forest management
+                            types."
                        ),#end circadian summary
                        
                        box( title="Spatial Trends", width=NULL,
