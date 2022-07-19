@@ -28,8 +28,9 @@ month.ops <- month.abb[1:12]
 
 compartment.ops <- sort(unique(bats$COMPARTMENT))
 
-cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00", "#fed457", "#c2c527", 
-               "#9ae825", "#6f9c01", "#c5d5ea", "#d3ffe2", "#a2c2c6", "#087d93",
+cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00", 
+               "#fed457", "#c2c527", "#9ae825", "#6f9c01", 
+               "#c5d5ea", "#d3ffe2", "#a2c2c6", "#087d93",
                "#0c3660", "#133139")
 
 #--UI--########################################################################
@@ -143,32 +144,6 @@ ui <- dashboardPage(
                      hr(),
                      h2('Bats of Sewanee:'),
                      img(src='Species.png', width="100%", height="auto"),
-                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Big_brown_bat',
-                     #            "Big Brown Bat"),
-                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Eastern_small-footed_myotis',
-                     #            "Eastern Small-footed Bat"),
-                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Evening_bat',
-                     #            "Evening Bat"),
-                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Gray_bat',
-                     #            "Gray Bat"),
-                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Hoary_bat',
-                     #            "Hoary Bat"),
-                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Indiana_bat',
-                     #            "Indiana Bat"),
-                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Little_brown_bat',
-                     #            "Little Brown Bat"),
-                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Myotis_septentrionalis',
-                     #            "Northern Long-eared Bat"),
-                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Rafinesque%27s_big-eared_bat',
-                     #            "Rafinesque's Big-eared Bat"),
-                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Eastern_red_bat',
-                     #            "Red Bat"),
-                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Silver-haired_bat',
-                     #            "Silver-haired Bat"),
-                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Southeastern_myotis',
-                     #            "Southeastern Myotis"),
-                     #br(),tags$a(href='https://en.wikipedia.org/wiki/Tricolored_bat',
-                     #            "Tri-colored Bat"),
                      hr(),
                      h2('Land Management Practices:'),
                      "Our land management strategies are currently broken up 
@@ -459,7 +434,7 @@ ui <- dashboardPage(
                 
                 box( title="Diversity Trends", width=9,
                      solidHeader=TRUE, status='info',
-                     plotOutput("diversity.plot") ),
+                     plotlyOutput("diversity.plot") ),
                 
                 # controls column --
                 column( width=3,
@@ -632,7 +607,7 @@ server <- function(input, output) {
     # assign data for sensor accuracy -----
     rv$bats.acc <- bats.sub
     
-    # make group column -----
+    # make group and species columns -----
     if( input$grouping == grouping.ops[1] ){ 
       bats.sub <- bats.sub %>% 
         mutate( group=Common, species=Scientific )
@@ -643,11 +618,8 @@ server <- function(input, output) {
       bats.sub <- bats.sub %>% 
         mutate( group=obligate, species=obligate )
     }
-    # grouping filter -----
-    bats.sub <- bats.sub %>% filter( group %in% input$group )
-    
-    # assign main rv data -----
-    rv$bats.sub <- bats.sub
+    # grouping filter and assign main rv data -----
+    rv$bats.sub <- bats.sub %>% filter( group %in% input$group )
     
     # filter and assign weather data -----
     rv$weather.sub <- weather %>% 
@@ -738,6 +710,7 @@ server <- function(input, output) {
     # make plot with plotly ----
     #aes(x=year, y=relFreq, color=group, text=paste("Group:",group))
     #ggplotly( yearly.p, hovertemplate=paste() )
+    #ggplotly( yearly.p, tooltip=c("fill", "text"))
     yearly.p
     
   })#end long-term plot ---
@@ -888,6 +861,9 @@ server <- function(input, output) {
     hourly.p <- hourly.p + geom_line()
     
     # make plot -----
+    #aes(x=xVar, y=yVar, color=colVar, text=paste(content))
+    #ggplotly( plot, hovertemplate=paste() )
+    #ggplotly( plot, tooltip=c("color", "text"))
     hourly.p 
     
   })#end circadian plot ---
@@ -951,7 +927,11 @@ server <- function(input, output) {
       }
       
       # wrap if appropriate -----
-      if(input$site.wrapVar != 'none'){ site.p <- site.p + facet_wrap(~wrapV) }
+      if(input$site.wrapVar != 'none'){ 
+        site.p <- site.p + 
+          facet_wrap(~wrapV) +
+          theme(axis.text.x = element_text(angle = 90)) 
+      }
       
       # plot -----
       print(site.p)
@@ -964,7 +944,7 @@ server <- function(input, output) {
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Diversity (species) plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  output$diversity.plot <- renderPlot({
+  output$diversity.plot <- renderPlotly({
     
     # set wrapV by input wrap var -----
     if(input$diversity.wrapVar=='management'){ 
@@ -993,7 +973,9 @@ server <- function(input, output) {
     bats.div <- distinct(bats.div)
     
     # make base plot -----
-    diversity.p <- ggplot( bats.div, aes(x=year, y=perc, fill=group) ) +
+    diversity.p <- ggplot( bats.div, 
+                           aes(x=year, y=perc, fill=group,
+                               text=paste0("Percentage: ",round(perc,2),"% ")) ) +
       scale_fill_manual(values = cbPalette) +
       labs(title='Bat Species Proportions',
            x='Year', y='Percent of Total Activity',
@@ -1004,12 +986,16 @@ server <- function(input, output) {
     
     # wrap if appropriate -----
     if(input$diversity.wrapVar != 'none'){
-      diversity.p <- diversity.p + facet_wrap(~wrapV)
+      diversity.p <- diversity.p + 
+        facet_wrap(~wrapV) +
+        theme(axis.text.x = element_text(angle = 90))
     }
     
-    # plot with plotly -----
-    #ggplotly(diversity.p, tooltip=c("fill", "text"))
-    diversity.p
+    # make plot -----
+    #aes(x=xVar, y=yVar, color=colVar, text=paste(content))
+    #ggplotly( diversity.p, hovertemplate=paste0() )
+    ggplotly( diversity.p, tooltip=c("text") )
+    #diversity.p
     
   })#end diversity plot ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
