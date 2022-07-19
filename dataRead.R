@@ -23,6 +23,7 @@ bats <- bats %>%
          month = month.abb[monthN],
          hour = hour(TIME),
          siteID = paste(COMPARTMENT,SITE, sep='_'),
+         siteDate = paste(SITE, DATE),
          AUTO.ID = gsub("CORTOW", "CORRAF", AUTO.ID),
          AUTO.ID = ifelse(grepl('noID',AUTO.ID,ignore.case=TRUE),'no.ID',AUTO.ID) )
 # Any bat listed as CORTOW should be listed as CORRAF (Amy text)

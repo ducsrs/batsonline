@@ -609,12 +609,15 @@ server <- function(input, output) {
     
     # make group and species columns -----
     if( input$grouping == grouping.ops[1] ){ 
+      rv$legendTitle <- "Common Name"
       bats.sub <- bats.sub %>% 
         mutate( group=Common, species=Scientific )
     } else if( input$grouping == grouping.ops[2] ){
+      rv$legendTitle <- "Common Name"
       bats.sub <- bats.sub %>% 
         mutate( group=group_common, species=group_species )
     } else if( input$grouping == grouping.ops[3] ){
+      rv$legendTitle <- "Cave Status"
       bats.sub <- bats.sub %>% 
         mutate( group=obligate, species=obligate )
     }
@@ -650,7 +653,7 @@ server <- function(input, output) {
     if(input$yearly.wrapVar == 'none'){
       bats.yr <- rv$bats.sub %>% 
         group_by(year) %>% 
-        mutate( nSensors = length(unique(siteID)) )
+        mutate( nSensors = length(unique(siteDate)) )
       bats.yr <- bats.yr %>% 
         group_by(year,group,species) %>% 
         summarize( count=n(), relFreq=count/nSensors )
@@ -658,7 +661,7 @@ server <- function(input, output) {
     } else {
       bats.yr <- bats.yr %>% 
         group_by(year,wrapV) %>% 
-        mutate( nSensors = length(unique(siteID)) )
+        mutate( nSensors = length(unique(siteDate)) )
       bats.yr <- bats.yr %>% 
         group_by(year,wrapV,group,species) %>% 
         summarize( count=n(), relFreq=count/nSensors )
@@ -679,7 +682,8 @@ server <- function(input, output) {
       scale_fill_manual(values = cbPalette) +
       labs(title="Yearly Bat Activity",
            x="Year", y ="Relative Frequency",
-           caption="Sewanee Bat Study, DataLab 2022")
+           caption="Sewanee Bat Study, DataLab 2022",
+           color=rv$legendTitle )
     
     # add weather geom -----
     if('rain' %in% input$yearly.weather){
@@ -704,7 +708,8 @@ server <- function(input, output) {
     
     # wrap if appropriate -----
     if(input$yearly.wrapVar != 'none'){
-      yearly.p <- yearly.p + facet_wrap(~wrapV)
+      yearly.p <- yearly.p + 
+        facet_wrap(~wrapV, ncol=round(sqrt(length(unique(bats.yr$wrapV)))) )
     }
     
     # make plot with plotly ----
@@ -746,14 +751,14 @@ server <- function(input, output) {
     if(input$monthly.wrapVar == 'none'){
       bats.mon <- rv$bats.sub %>% 
         group_by(monthN,month) %>% 
-        mutate( nSensors = length(unique(siteID)) )
+        mutate( nSensors = length(unique(siteDate)) )
       bats.mon <- bats.mon %>% 
         group_by(monthN,month,group,species) %>% 
         summarize( count=n(), relFreq=count/nSensors )
     } else {
       bats.mon <- bats.mon %>% 
         group_by(monthN,month,wrapV) %>% 
-        mutate( nSensors = length(unique(siteID)) )
+        mutate( nSensors = length(unique(siteDate)) )
       bats.mon <- bats.mon %>% 
         group_by(monthN,month,wrapV,group,species) %>% 
         summarize( count=n(), relFreq=count/nSensors )
@@ -780,7 +785,8 @@ server <- function(input, output) {
       theme(axis.text.x = element_text(angle = 90)) +
       labs(title="Seasonal Bat Activity",
            x="Month", y="Relative Frequency",
-           caption="Sewanee Bat Study, DataLab 2022")
+           caption="Sewanee Bat Study, DataLab 2022",
+           color=rv$legendTitle )
     
     # add weather -----
     if('rain' %in% input$monthly.weather){
@@ -832,14 +838,14 @@ server <- function(input, output) {
     if(input$hourly.wrapVar == 'none'){
       bats.hr <- rv$bats.sub %>% 
         group_by(hour) %>% 
-        mutate( nSensors = length(unique(siteID)) )
+        mutate( nSensors = length(unique(siteDate)) )
       bats.hr <- bats.hr %>% 
         group_by(hour,group,species) %>% 
         summarize( count = n(), relFreq = count/nSensors )
     } else {
       bats.hr <- bats.hr %>% 
         group_by(hour, wrapV) %>% 
-        mutate( nSensors = length(unique(siteID)) )
+        mutate( nSensors = length(unique(siteDate)) )
       bats.hr <- bats.hr %>% 
         group_by(hour,wrapV,group,species) %>% 
         summarize( count = n(), relFreq = count/nSensors )
@@ -850,7 +856,8 @@ server <- function(input, output) {
       scale_fill_manual(values = cbPalette) +
       labs(title="Circadian Bat Activity",
            x="Hour", y="Relative Frequency",
-           caption="Sewanee Bat Study, DataLab 2022")
+           caption="Sewanee Bat Study, DataLab 2022",
+           color=rv$legendTitle )
     
     # wrap if appropriate -----
     if(input$hourly.wrapVar != 'none'){
@@ -889,14 +896,14 @@ server <- function(input, output) {
     if(input$site.wrapVar == 'none'){
       bats.map <- bats.map %>% 
         group_by(COMPARTMENT,div) %>% 
-        mutate( nSensors = length(unique(siteID)) )
+        mutate( nSensors = length(unique(siteDate)) )
       bats.map <- bats.map %>% 
         group_by(COMPARTMENT,div,group,species) %>% 
         summarize( count=n(), relFreq=count/nSensors )
     } else {
       bats.map <- bats.map %>% 
         group_by(COMPARTMENT,div,wrapV) %>% 
-        mutate( nSensors = length(unique(siteID)) )
+        mutate( nSensors = length(unique(siteDate)) )
       bats.map <- bats.map %>% 
         group_by(COMPARTMENT,div,group,species,wrapV) %>% 
         summarize( count=n(), relFreq=count/nSensors )
@@ -915,7 +922,8 @@ server <- function(input, output) {
         scale_fill_manual(values = cbPalette) +
         labs(title=comp.T,
              x="Date", y ="Relative Frequency",
-             caption="Sewanee Bat Study, DataLab 2022")
+             caption="Sewanee Bat Study, DataLab 2022",
+             color=rv$legendTitle )
       
       # add line and point geoms -----
       site.p <- site.p + geom_line() + geom_point()
@@ -979,7 +987,8 @@ server <- function(input, output) {
       scale_fill_manual(values = cbPalette) +
       labs(title='Bat Species Proportions',
            x='Year', y='Percent of Total Activity',
-           caption="Sewanee Bat Study, DataLab 2022")
+           caption="Sewanee Bat Study, DataLab 2022",
+           fill=rv$legendTitle )
     
     # add geom col -----
     diversity.p <- diversity.p + geom_col()

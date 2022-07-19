@@ -11,7 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 source('dataRead-bats.R')
 bats <- bats %>%  
   rename( siteID = sensor) %>% 
-  select(-LATITUDE,-LONGITUDE)
+  select(-LATITUDE,-LONGITUDE) %>% 
+  mutate( siteDate = paste(SITE, DATE) )
 
 # sensor data read -----
 source('dataRead-sensorDates.R')
@@ -240,8 +241,8 @@ input.group <- unique(bats$group_common)
 input.group <- input.group[-which(input.group%in%bad)]
 input.year <- c(2017:2021)
 input.month <- month.abb[1:12]
-yearly.wrapVar <- 'management'
-yearly.weather <- c("rain","wind","temperature")
+yearly.wrapVar <- 'none'
+#yearly.weather <- c("rain","wind","temperature")
 
 # colorblind palette -----
 cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#133139")
@@ -284,7 +285,7 @@ if(yearly.wrapVar=='management'){ bats.yr <- bats.sub %>% mutate(wrapV=habitat) 
 if(yearly.wrapVar == 'none'){
   bats.yr <- bats.sub %>% 
     group_by(year) %>% 
-    mutate( nSensors = length(unique(siteID)) )
+    mutate( nSensors = length(unique(siteDate)) )
   bats.yr <- bats.yr %>% 
     group_by(year,group,species) %>% 
     summarize( count=n(), relFreq=count/nSensors )
@@ -292,7 +293,7 @@ if(yearly.wrapVar == 'none'){
 } else {
   bats.yr <- bats.yr %>% 
     group_by(year,wrapV) %>% 
-    mutate( nSensors = length(unique(siteID)) )
+    mutate( nSensors = length(unique(siteDate)) )
   bats.yr <- bats.yr %>% 
     group_by(year,wrapV,group,species) %>% 
     summarize( count=n(), relFreq=count/nSensors )
@@ -320,7 +321,8 @@ yearly.p <- ggplot() +
   scale_fill_manual(values = cbPalette) +
   labs(title="Yearly Bat Activity",
        x="Year", y ="Relative Frequency",
-       caption="Sewanee Bat Study, DataLab 2022")
+       caption="Sewanee Bat Study, DataLab 2022",
+       color="Common Name")
 
 # add weather -----
 if('rain' %in% yearly.weather){
@@ -347,7 +349,7 @@ if(yearly.wrapVar != 'none'){
 
 # plot with plotly ----
 #ggplotly( yearly.p, hovertemplate=paste() )
-yearly.p
+yearly.p + theme_clean()
 ```
 
 
