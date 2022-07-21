@@ -245,7 +245,7 @@ ui <- dashboardPage(
                 
                 box( title="Long-Term Trends", width=9, 
                      solidHeader=TRUE, status='info',
-                     plotOutput("yearly.plot") ),
+                     plotlyOutput("yearly.plot") ),
                 
                 # controls column --
                 column( width=3,
@@ -253,26 +253,40 @@ ui <- dashboardPage(
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='primary', collapsible=TRUE, 
-                             #radioButtons(inputId="yearly.grouping", 
-                             #             label="Display trends by:",
-                             #             choices = grouping.ops, 
-                             #             selected = grouping.ops[2]
-                             #),#end grouping UI
-                             #uiOutput("yearly.group.UI"),
+                             radioButtons(inputId="yearly.granularity", 
+                                          label="Granularity:",
+                                          choices = c('year','month'), 
+                                          selected = 'year'
+                             ),#end granularity selection
                              checkboxGroupInput(inputId="yearly.weather",
                                                 label="Weather display:",
                                                 choices=weather.ops
                              ),#end weather check boxes
                              radioButtons(inputId="yearly.wrapVar", 
                                           label="Wrap facets by:",
-                                          choices = c('none','management'), 
-                                          selected = 'none'
+                                          choices=c('none','management'), 
+                                          selected='none'
                              )#end wrap var selection
                         ),#end graph controls box
                         
                         # aesthetic controls
                         box( title="Aesthetic Controls", width=NULL,
-                             status='primary', collapsible=TRUE 
+                             status='primary', collapsible=TRUE, 
+                             checkboxGroupInput(inputId="yearly.style",
+                                                label="Plot Type(s):",
+                                                choices=c('line','points'), 
+                                                selected='line'
+                             ),#end display check boxes
+                             sliderInput(inputId="yearly.line", 
+                                         label="Line size:", 
+                                         min=0.5, max=3.5, 
+                                         value=0.5 
+                             ),#end line size slider input
+                             sliderInput(inputId="yearly.point", 
+                                         label="Point size:", 
+                                         min=0.5, max=5, 
+                                         value=1 
+                             )#end point size slider input
                         )#end aesthetics box
                         
                 )#end controls column
@@ -293,20 +307,14 @@ ui <- dashboardPage(
                 
                 box( title="Seasonal Trends", width=9,
                      solidHeader=TRUE, status='info',
-                     plotOutput("monthly.plot") ),
+                     plotlyOutput("monthly.plot") ),
                 
                 # controls column --
                 column( width=3,
                         
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
-                             status='primary', collapsible=TRUE, 
-                             #radioButtons(inputId="monthly.grouping", 
-                             #             label="Display trends by:",
-                             #             choices = grouping.ops, 
-                             #             selected = grouping.ops[2]
-                             #),#end grouping UI
-                             #uiOutput("monthly.group.UI"),
+                             status='primary', collapsible=TRUE,
                              checkboxGroupInput(inputId="monthly.weather",
                                                 label="Weather display:",
                                                 choices=weather.ops
@@ -320,7 +328,22 @@ ui <- dashboardPage(
                         
                         # aesthetic controls
                         box( title="Aesthetic Controls", width=NULL,
-                             status='primary', collapsible=TRUE 
+                             status='primary', collapsible=TRUE, 
+                             checkboxGroupInput(inputId="monthly.style",
+                                                label="Plot Type(s):",
+                                                choices=c('line','points'), 
+                                                selected='line'
+                             ),#end display check boxes
+                             sliderInput(inputId="monthly.line", 
+                                         label="Line size:", 
+                                         min=0.5, max=3.5, 
+                                         value=0.5 
+                             ),#end line size slider input
+                             sliderInput(inputId="monthly.point", 
+                                         label="Point size:", 
+                                         min=0.5, max=5, 
+                                         value=1 
+                             )#end point size slider input
                         )#end aesthetics box
                         
                 )#end controls column
@@ -341,7 +364,7 @@ ui <- dashboardPage(
                 
                 box( title="Circadian Trends", width=9,
                      solidHeader=TRUE, status='info',
-                     plotOutput("hourly.plot") ),
+                     plotlyOutput("hourly.plot") ),
                 
                 # controls column --
                 column( width=3,
@@ -349,12 +372,6 @@ ui <- dashboardPage(
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
                              status='primary', collapsible=TRUE, 
-                             #radioButtons(inputId="hourly.grouping", 
-                             #             label="Display trends by:",
-                             #             choices = grouping.ops, 
-                             #             selected = grouping.ops[2]
-                             #),#end grouping UI
-                             #uiOutput("hourly.group.UI"),
                              radioButtons(inputId="hourly.wrapVar", 
                                           label="Wrap facets by:",
                                           choices = c('none','year','month','management'), 
@@ -364,7 +381,22 @@ ui <- dashboardPage(
                         
                         # aesthetics controls
                         box( title="Aesthetic Controls", width=NULL,
-                             status='primary', collapsible=TRUE 
+                             status='primary', collapsible=TRUE, 
+                             checkboxGroupInput(inputId="hourly.style",
+                                                label="Plot Type(s):",
+                                                choices=c('line','points'), 
+                                                selected='line'
+                             ),#end display check boxes
+                             sliderInput(inputId="hourly.line", 
+                                         label="Line size:", 
+                                         min=0.5, max=3.5, 
+                                         value=0.5 
+                             ),#end line size slider input
+                             sliderInput(inputId="hourly.point", 
+                                         label="Point size:", 
+                                         min=0.5, max=5, 
+                                         value=1 
+                             )#end point size slider input
                         )#end aesthetics box
                         
                 )#end controls column
@@ -385,7 +417,7 @@ ui <- dashboardPage(
                 
                 box( title="Spatial Trends", width=9,
                      solidHeader=TRUE, status='info',
-                     plotOutput("site.plot") ),
+                     plotlyOutput("site.plot") ),
                 
                 # controls column --
                 column( width=3,
@@ -413,7 +445,22 @@ ui <- dashboardPage(
                         
                         # aesthetic controls
                         box( title="Aesthetic Controls", width=NULL,
-                             status='primary', collapsible=TRUE 
+                             status='primary', collapsible=TRUE, 
+                             checkboxGroupInput(inputId="site.style",
+                                                label="Plot Type(s):",
+                                                choices=c('line','points'), 
+                                                selected=c('line','points')
+                             ),#end display check boxes
+                             sliderInput(inputId="site.line", 
+                                         label="Line size:", 
+                                         min=0.5, max=3.5, 
+                                         value=0.5 
+                             ),#end line size slider input
+                             sliderInput(inputId="site.point", 
+                                         label="Point size:", 
+                                         min=0.5, max=5, 
+                                         value=1 
+                             )#end point size slider input
                         )#end aesthetics box
                         
                 )#end controls column
@@ -441,13 +488,7 @@ ui <- dashboardPage(
                         
                         # graph controls box
                         box( title="Graph Controls", width=NULL,
-                             status='primary', collapsible=TRUE, 
-                             #radioButtons(inputId="diversity.grouping", 
-                             #             label="Display trends by:",
-                             #             choices = grouping.ops, 
-                             #             selected = grouping.ops[2]
-                             #),#end grouping UI
-                             #uiOutput("diversity.group.UI"),
+                             status='primary', collapsible=TRUE,
                              radioButtons(inputId="diversity.wrapVar", 
                                           label="Wrap facets by:",
                                           choices = c('none','management'), 
@@ -490,17 +531,27 @@ ui <- dashboardPage(
                                           label="Granularity:",
                                           choices = c('year','month','day'), 
                                           selected = 'year'
-                             )#end wrap var selection
+                             )#end granularity selection
                         ),#end graph controls box
                         
                         # aesthetic controls
                         box( title="Aesthetic Controls", width=NULL,
                              status='info', collapsible=TRUE,
-                             radioButtons(inputId="sampling.style", 
-                                          label="Plot style:",
-                                          choices = c('line','points'), 
-                                          selected = 'line'
-                             )#end wrap var selection
+                             checkboxGroupInput(inputId="sampling.style",
+                                                label="Plot Type(s):",
+                                                choices=c('line','points'), 
+                                                selected='line'
+                             ),#end display check boxes
+                             sliderInput(inputId="sampling.line", 
+                                         label="Line size:", 
+                                         min=0.5, max=3.5, 
+                                         value=0.5 
+                             ),#end line size slider input
+                             sliderInput(inputId="sampling.point", 
+                                         label="Point size:", 
+                                         min=0.5, max=5, 
+                                         value=1 
+                             )#end point size slider input
                         )#end aesthetic controls
                         
                 )#end controls column
@@ -635,35 +686,46 @@ server <- function(input, output) {
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Long-Term (yearly) plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  output$yearly.plot <- renderPlot({
+  output$yearly.plot <- renderPlotly({
+    
+    # group by granularity level -----
+    if(input$yearly.granularity == 'year'){
+      bats.yr <- rv$bats.sub %>% mutate( div=year(DATE) )
+      weather.yr <- rv$weather.sub %>% mutate( div=year(DATE) )
+    } else if(input$yearly.granularity == 'month'){
+      bats.yr <- rv$bats.sub %>% 
+        mutate( div=as.Date(paste(year(DATE),month(DATE),1,sep='-')) )
+      weather.yr <- rv$weather.sub %>% 
+        mutate( div=as.Date(paste(year(DATE),month(DATE),1,sep='-')) )
+    }
     
     # summarize weather data -----
-    weather.yr <- rv$weather.sub %>% 
-      group_by(year) %>% 
+    weather.yr <- weather.yr %>% 
+      group_by(div) %>% 
       summarize( AvgTemp = mean(AvgTemp, na.rm=TRUE),
                  AvgWind = mean(AvgWind, na.rm=TRUE),
                  rain.intensity = mean(rain.intensity, na.rm=TRUE))
     
     # set wrapV by input wrap var -----
     if(input$yearly.wrapVar=='management'){ 
-      bats.yr <- rv$bats.sub %>% mutate(wrapV=habitat) 
-    }
+      bats.yr <- bats.yr %>% mutate(wrapV=habitat) 
+    } 
     
     # summarize by appropriate groups -----
     if(input$yearly.wrapVar == 'none'){
-      bats.yr <- rv$bats.sub %>% 
-        group_by(year) %>% 
+      bats.yr <- bats.yr %>% 
+        group_by(div) %>% 
         mutate( nSensors = length(unique(siteDate)) )
       bats.yr <- bats.yr %>% 
-        group_by(year,group,species) %>% 
+        group_by(div,group,species) %>% 
         summarize( count=n(), relFreq=count/nSensors )
       bats.yr <- distinct(bats.yr)
     } else {
       bats.yr <- bats.yr %>% 
-        group_by(year,wrapV) %>% 
+        group_by(div,wrapV) %>% 
         mutate( nSensors = length(unique(siteDate)) )
       bats.yr <- bats.yr %>% 
-        group_by(year,wrapV,group,species) %>% 
+        group_by(div,wrapV,group,species) %>% 
         summarize( count=n(), relFreq=count/nSensors )
       bats.yr <- distinct(bats.yr)
     }
@@ -685,38 +747,53 @@ server <- function(input, output) {
            caption="Sewanee Bat Study, DataLab 2022",
            color=rv$legendTitle )
     
-    # add weather geom -----
+    # add weather geoms -----
     if('rain' %in% input$yearly.weather){
       yearly.p <- yearly.p + 
         geom_area( data=weather.yr, 
-                   aes(x=year, y=rain.intensity), fill='blue', alpha=0.1 )
+                   aes(x=div, y=rain.intensity, text="rain intensity"), 
+                   fill='blue', alpha=0.1 )
     }
     if('wind' %in% input$yearly.weather){
       yearly.p <- yearly.p + 
         geom_area( data=weather.yr, 
-                   aes(x=year, y=AvgWind), fill='yellow', alpha=0.1 )
+                   aes(x=div, y=AvgWind, text="relative wind"), 
+                   fill='yellow', alpha=0.1 )
     }
     if('temperature' %in% input$yearly.weather){
       yearly.p <- yearly.p + 
         geom_area( data=weather.yr, 
-                   aes(x=year, y=AvgTemp), fill='red', alpha=0.1 )
+                   aes(x=div, y=AvgTemp, text="relative temperature"), 
+                   fill='red', alpha=0.1 )
     }
     
-    # add activity line geom -----
-    yearly.p <- yearly.p + 
-      geom_line( data=bats.yr, aes(x=year, y=relFreq, color=group) )
+    # add activity geoms -----
+    if('line' %in% input$yearly.style){
+      yearly.p <- yearly.p + 
+        geom_line( data=bats.yr, 
+                   aes(x=div, y=relFreq, color=group, 
+                       text=paste(" Common:",group,"\n","Species:",species) ), 
+                   size=input$yearly.line )
+    }
+    if('points' %in% input$yearly.style){
+      yearly.p <- yearly.p + 
+        geom_point( data=bats.yr, 
+                   aes(x=div, y=relFreq, color=group,
+                       text=paste(" Common:",group,"\n","Species:",species) ), 
+                   size=input$yearly.point )
+    }
     
     # wrap if appropriate -----
     if(input$yearly.wrapVar != 'none'){
       yearly.p <- yearly.p + 
-        facet_wrap(~wrapV, ncol=round(sqrt(length(unique(bats.yr$wrapV)))) )
+        facet_wrap(~wrapV, nrow=round(sqrt(length(unique(bats.yr$wrapV)))) )
     }
     
     # make plot with plotly ----
     #aes(x=year, y=relFreq, color=group, text=paste("Group:",group))
     #ggplotly( yearly.p, hovertemplate=paste() )
-    #ggplotly( yearly.p, tooltip=c("fill", "text"))
-    yearly.p
+    ggplotly( yearly.p, tooltip=c("text"))
+    #yearly.p
     
   })#end long-term plot ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -724,7 +801,7 @@ server <- function(input, output) {
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Seasonal (monthly) plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  output$monthly.plot <- renderPlot({
+  output$monthly.plot <- renderPlotly({
     
     # base weather data -----
     if(input$monthly.wrapVar=='year'){
@@ -792,22 +869,37 @@ server <- function(input, output) {
     if('rain' %in% input$monthly.weather){
       monthly.p <- monthly.p + 
         geom_area( data=weather.mon, 
-                   aes(x=monthN, y=rain.intensity), fill='blue', alpha=0.1 )
+                   aes(x=monthN, y=rain.intensity, text="rain intensity"), 
+                   fill='blue', alpha=0.1 )
     }
     if('wind' %in% input$monthly.weather){
       monthly.p <- monthly.p + 
         geom_area( data=weather.mon, 
-                   aes(x=monthN, y=AvgWind), fill='yellow', alpha=0.1 )
+                   aes(x=monthN, y=AvgWind, text="relative wind"), 
+                   fill='yellow', alpha=0.1 )
     }
     if('temperature' %in% input$monthly.weather){
       monthly.p <- monthly.p + 
         geom_area( data=weather.mon, 
-                   aes(x=monthN, y=AvgTemp), fill='red', alpha=0.1 )
+                   aes(x=monthN, y=AvgTemp, text="relative temperature"), 
+                   fill='red', alpha=0.1 )
     }
     
-    # add activity line geom -----
-    monthly.p <- monthly.p + 
-      geom_line( data=bats.mon, aes(x=monthN, y=relFreq, color=group) )
+    # add activity geoms -----
+    if('line' %in% input$monthly.style){
+      monthly.p <- monthly.p + 
+        geom_line( data=bats.mon, 
+                   aes(x=monthN, y=relFreq, color=group,
+                       text=paste(" Common:",group,"\n","Species:",species) ), 
+                   size=input$monthly.line )
+    }
+    if('points' %in% input$monthly.style){
+      monthly.p <- monthly.p + 
+        geom_point( data=bats.mon, 
+                    aes(x=monthN, y=relFreq, color=group, 
+                        text=paste(" Common:",group,"\n","Species:",species) ), 
+                    size=input$monthly.point )
+    }
     
     # wrap if appropriate -----
     if(input$monthly.wrapVar != 'none'){
@@ -815,7 +907,8 @@ server <- function(input, output) {
     }
     
     # plot -----
-    monthly.p
+    ggplotly( monthly.p, tooltip=c('text'))
+    #monthly.p
     
   })#end seasonal plot ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -823,7 +916,7 @@ server <- function(input, output) {
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Circadian (hourly) plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  output$hourly.plot <- renderPlot({
+  output$hourly.plot <- renderPlotly({
     
     # set wrapV by input wrap var -----
     if(input$hourly.wrapVar=='year'){ 
@@ -852,7 +945,9 @@ server <- function(input, output) {
     }
     
     # make base plot -----
-    hourly.p <- ggplot( bats.hr, aes(x=hour, y=relFreq, color=group) ) +
+    hourly.p <- ggplot( data=bats.hr, 
+                        aes(x=hour, y=relFreq, color=group, 
+                            text=paste(" Common:",group,"\n","Species:",species)) ) +
       scale_fill_manual(values = cbPalette) +
       labs(title="Circadian Bat Activity",
            x="Hour", y="Relative Frequency",
@@ -864,14 +959,19 @@ server <- function(input, output) {
       hourly.p <- hourly.p + facet_wrap(~wrapV)
     }
     
-    # add line geom -----
-    hourly.p <- hourly.p + geom_line()
+    # add activity geoms -----
+    if('line' %in% input$hourly.style){
+      hourly.p <- hourly.p + geom_line( size=input$hourly.line )
+    }
+    if('points' %in% input$hourly.style){
+      hourly.p <- hourly.p + geom_point( size=input$hourly.point )
+    }
     
     # make plot -----
     #aes(x=xVar, y=yVar, color=colVar, text=paste(content))
     #ggplotly( plot, hovertemplate=paste() )
-    #ggplotly( plot, tooltip=c("color", "text"))
-    hourly.p 
+    ggplotly( hourly.p, tooltip=c("text"))
+    #hourly.p 
     
   })#end circadian plot ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -879,7 +979,7 @@ server <- function(input, output) {
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Spatial (site) plot -----
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  output$site.plot <- renderPlot({
+  output$site.plot <- renderPlotly({
     
     # set granularity level -----
     if(input$site.granularity == 'year'){
@@ -909,42 +1009,44 @@ server <- function(input, output) {
         summarize( count=n(), relFreq=count/nSensors )
     }
     bats.map <- distinct(bats.map)
+      
+    # generate graph title -----
+    comp.T <- paste("Compartment",input$site.comp,"Bat Activity")
     
-    # graphing loop -----
-    #for(comp in input$site.comp){
-      
-      # generate graph title -----
-      comp.T <- paste("Compartment",input$site.comp,"Bat Activity")
-      
-      # make base plot -----
-      site.p <- ggplot( bats.map %>% filter(COMPARTMENT==input$site.comp), 
-                        aes(x=div, y=relFreq, color=group) ) +
-        scale_fill_manual(values = cbPalette) +
-        labs(title=comp.T,
-             x="Date", y ="Relative Frequency",
-             caption="Sewanee Bat Study, DataLab 2022",
-             color=rv$legendTitle )
-      
-      # add line and point geoms -----
-      site.p <- site.p + geom_line() + geom_point()
-      
-      # make year graph neat -----
-      if(input$site.granularity == 'year'){
-        site.p <- site.p + 
-          scale_x_continuous( breaks = c(min(bats.map$div):max(bats.map$div)) )
-      }
-      
-      # wrap if appropriate -----
-      if(input$site.wrapVar != 'none'){ 
-        site.p <- site.p + 
-          facet_wrap(~wrapV) +
-          theme(axis.text.x = element_text(angle = 90)) 
-      }
-      
-      # plot -----
-      print(site.p)
-      
-    #}# end graphing loop
+    # make base plot -----
+    site.p <- ggplot( bats.map %>% filter(COMPARTMENT==input$site.comp), 
+                      aes(x=div, y=relFreq, color=group,
+                          text=paste(" Common:",group,"\n","Species:",species)) ) +
+      scale_fill_manual(values = cbPalette) +
+      labs(title=comp.T,
+           x="Date", y ="Relative Frequency",
+           caption="Sewanee Bat Study, DataLab 2022",
+           color=rv$legendTitle )
+    
+    # add activity geoms -----
+    if('line' %in% input$site.style){
+      site.p <- site.p + geom_line( size=input$site.line )
+    }
+    if('points' %in% input$site.style){
+      site.p <- site.p + geom_point( size=input$site.point )
+    }
+    
+    # make year graph neat -----
+    if(input$site.granularity == 'year'){
+      site.p <- site.p + 
+        scale_x_continuous( breaks = c(min(bats.map$div):max(bats.map$div)) )
+    }
+    
+    # wrap if appropriate -----
+    if(input$site.wrapVar != 'none'){ 
+      site.p <- site.p + 
+        facet_wrap(~wrapV) +
+        theme(axis.text.x = element_text(angle = 90)) 
+    }
+    
+    # plot -----
+    ggplotly( site.p, tooltip=c("text") )
+    #site.p
     
   })#end spatial plot ---
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1031,14 +1133,16 @@ server <- function(input, output) {
       summarize( trapNights = n() )
     
     # create base plot -----
-    sample.plot <- ggplot( sampling.days, aes(x=div, y=trapNights) )
+    sample.plot <- ggplot( data=sampling.days, aes(x=div, y=trapNights) )
     
     # add plot geoms based on plot style input -----
-    if(input$sampling.style == 'line'){
-      sample.plot <- sample.plot + geom_line()
+    if('line' %in% input$sampling.style){
+      sample.plot <- sample.plot + 
+        geom_line( size=input$sampling.line )
     }
-    if(input$sampling.style == 'points'){
-      sample.plot <- sample.plot + geom_point(alpha=0.4)
+    if('points' %in% input$sampling.style){
+      sample.plot <- sample.plot + 
+        geom_point( size=(input$sampling.line+1), alpha=0.4 )
     }
     
     # make plot with labels -----
