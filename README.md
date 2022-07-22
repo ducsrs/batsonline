@@ -47,9 +47,9 @@ Then, before running, make sure...
 - Compartment #/C#_S#/... , 
   where the first subfolder stands for compartment number, 
   and the second subfolder stands for site ID composed of compartment number and site number separated by an underscore
-- the subfolder called 'Code' holds all the code files from this repository, such as the data read, the exploratory markdowns, and the dashboard
-- you set your RStudio session working directory to the 'Code' folder (top of the RStudio interface: Session > Set Working Directory > Choose Directory) 
+- the subfolder called 'Code' holds all the code files from this repository, such as the data read, the exploratory markdowns, and the dashboard 
 
 To run...
 - open RStudio, and open Bats-Dashboard/app.R
+- set your RStudio session working directory to the 'Code' folder (top of the RStudio interface: Session > Set Working Directory > Choose Directory)
 - click 'Run App' in the upper righthand corner of the main viewing frame
