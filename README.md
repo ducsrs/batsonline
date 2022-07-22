@@ -40,6 +40,7 @@ microphone.
 First, the you will need to ensure... 
 - you have R (available free at https://cran.r-project.org/) 
 - you have RStudio (available free at https://www.rstudio.com/products/rstudio/download/)
+
 Then, before running, make sure...
 - you have a main folder that contains two subfolders; 'Data' and 'Code'
 - the subfolder called 'Data' holds all the data files, sorted into a folder tree containing paths of the following format: Compartment #/C#_S#/... , 
