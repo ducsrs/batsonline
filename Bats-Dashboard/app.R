@@ -155,6 +155,11 @@ ui <- dashboardPage(
                      as it’s a small bay or inlet, and cannot be managed in the 
                      same ways that forest land can.", 
                      hr(),
+                     h2('Data Acessibility:'),
+                     "For further information, or acess to the raw data, please
+                     email our team at ",
+                     tags$a(href='oess@sewanee.edu',"oess@sewanee.edu"),
+                     hr(),
                      h2('Further resources:'),
                      tags$a(href='http://www.tnbwg.org',
                             "Tennessee Bat Working Group"),
@@ -229,7 +234,110 @@ ui <- dashboardPage(
                        
                 )#end tabs column
                 
-              )#end about tab row -
+              ),#end about tab row -
+              
+              # about the team row -----
+              fluidRow(
+                
+                box( title="Meet the Team", width=12,
+                     solidHeader=TRUE, status='primary',
+                     collapsible=TRUE, collapsed=TRUE,
+                     
+                     # Sewanee Bat Study team -----
+                     h2('Sewanee Bat Study:'), hr(),
+                     
+                     h4('Dr. Amy Turner'),
+                     img(src='Amy.png', width="33%", height="auto"),
+                     br(), "Amy is the Director of the ",
+                     tags$a(href='https://new.sewanee.edu/offices/university-offices/environmental-stewardship-sustainability/',
+                            "Office of Environmental Stewardship and Sustainability"), 
+                     " and has been in this position since 2017. She received 
+                     her B.S in Wildlife and Fisheries Sciences; a B.S. in 
+                     Political Science from Texas A&M University; an M.S. in 
+                     Environmental Science from Texas A&M University-Corpus 
+                     Christi; and a Ph.D. in Wildlife Science from Texas A&M 
+                     University-Kingsville. Prior to serving at Sewanee, Amy 
+                     worked at the U.S. Fish and Wildlife Service as an 
+                     Ecologist alongside her fellow biologists to preserve and 
+                     protect resources for future generations. She has spent the 
+                     majority of her career dedicated to natural resource 
+                     conservation and education,  ensuring that the youth of 
+                     today will be the informed leaders of tomorrow.",
+                     br(), tags$a(href='ajturner@sewanee.edu',"Email"),
+                     hr(),
+                     
+                     h4('Kevin Fouts'),
+                     img(src='Kevin.png', width="33%", height="auto"),
+                     br(), "Kevin is the Research Manager for the ",
+                     tags$a(href='https://new.sewanee.edu/offices/university-offices/environmental-stewardship-sustainability/',
+                            "Office of Environmental Stewardship and Sustainability"),
+                     "at Sewanee. He received his M.S. in Wildlife Management 
+                     and Ecology from the University of Georgia and has put that 
+                     degree to work studying aquatic systems and their 
+                     inhabitants throughout the southeast. Prior to joining the 
+                     University, he investigated links between management 
+                     practices and stream salamander communities in the Smokies, 
+                     worked with managers of southeastern reservoirs to reduce 
+                     incidence of wildlife disease, and helped examine the 
+                     effects of biofuel production on water quality. A 
+                     whitewater guide in his younger years, Kevin loves spending 
+                     time in local streams and is helping coordinate the ",
+                     tags$a(href='https://new.sewanee.edu/offices/university-offices/environmental-stewardship-sustainability/headwaters-initiative/',
+                            "Sewanee Headwaters Initiative"),".",
+                     br(), tags$a(href='klfouts@sewanee.edu',"Email"),
+                     hr(),
+                     
+                     # Sewanee DataLab team -----
+                     h2('Sewanee DataLab:'), hr(),
+                     
+                     h4('Shelby Cline C\'23 - fellow'),
+                     img(src='Shelby.png', width="33%", height="auto"),
+                     br(), "Major: Biology", 
+                     br(), tags$a(href='shelbycline@upike.edu',"Email"),
+                     hr(),
+                     
+                     h4('Hallie Rutten C\'22 - fellow'),
+                     img(src='Hallie.png', width="33%", height="auto"),
+                     br(), "Major: Mathematics, Minor: Computer Science",
+                     br(), tags$a(href='ruttehm0@sewanee.edu',"Email"),
+                     hr(),
+                     
+                     h4('Monae Scott C\'23 - fellow'),
+                     img(src='MOnae.png', width="33%", height="auto"),
+                     br(), "Major: Sustainability",
+                     br(), tags$a(href='scottma0@sewanee.edu',"Email"),
+                     br(), tags$a(href='http://www.linkedin.com/in/monae-scott',
+                                  "LinkedIn"),
+                     hr(),
+                     
+                     h4('Dr. Eric Keen - mentor'),
+                     img(src='Eric.png', width="33%", height="auto"),
+                     br(), "Visiting Assistant Professor of Environmental Studies",
+                     "Eric Keen is a data scientist, marine ecologist, and educator. 
+                     He is the Science Co-director at ",
+                     tags$a(href='https://www.bcwhales.org/',"BCwhales"),
+                     ", a research biologist at ",
+                     tags$a(href='http://www.marecotel.org/',"Marecotel"),
+                     ", a data scientist at ",
+                     tags$a(href='https://www.hyfe.ai/',"Hyfe"),
+                     ", a mentor for ",
+                     tags$a(href='https://new.sewanee.edu/sewanee-datalab/',
+                            "Sewanee DataLab"),
+                     ", and a professor of Environmental Studies at Sewanee: the 
+                     University of the South. He earned his BA at Sewanee (2008) 
+                     and his Ph.D. at Scripps Institution of Oceanography (2017). 
+                     His ",
+                     tags$a(href='https://scholar.google.com/citations?hl=en&user=SrLDYrEAAAAJ&view_op=list_works&sortby=pubdate',
+                            "research"),
+                     " focuses on the ecology and conservation of whales in 
+                     developing coastal habitats. He is passionate about whales, 
+                     conservation, teaching, small-scale farming, running, and 
+                     bicycles. And pizza.",
+                     br(), tags$a(href='',"Email")
+                     
+                )#end team box
+                
+              )#end team row -
               
       ),#end About ---
       #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
