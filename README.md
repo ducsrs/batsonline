@@ -53,3 +53,19 @@ To run...
 - open RStudio, and open Bats-Dashboard/app.R
 - set your RStudio session working directory to the 'Code' folder (top of the RStudio interface: Session > Set Working Directory > Choose Directory)
 - click 'Run App' in the upper righthand corner of the main viewing frame
+
+## To Add New Data:
+
+Bats:
+- Place the new speadsheet (csv or excel) into the appropriate subfolder of the Data file tree
+- open RStudio, and open DataClean-bats.Rmd
+- run DataClean-bats.Rmd by clicking 'Knit' in the upper left corner of the main viewing frame
+
+Weather:
+- add it to the appropriate SUD Weather Station.xlsx tab
+
+Sensor and sites:
+- add it to the sensorCSdates.csv
+
+Bat species:
+- add it to the BatSpecies.csv
