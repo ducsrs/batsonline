@@ -18,6 +18,23 @@ bats <- bats %>%
   filter(! AUTO.ID %in% c("NoId","NoID","no.ID","Noise") )
 ```
 
+# Reminder:
+
+Before you run this code, make sure...
+
+- you have a main folder that contains two subfolders; 'Data' and 'Code'
+
+- the subfolder called 'Data' holds all the data files,
+  sorted in the proper place in the folder tree
+  
+- the subfolder called 'Code' holds all the code files,
+  such as this data read, the exploratory markdowns, and the dashboard
+  
+- you set your session working directory to the 'Code' folder
+  ( Top of the RStudio interface: Session > Set Working Directory > Choose Directory )
+
+
+
 # Seasonal (monthly) Trends and Climate (temperature/weather) Trends
 
 ```{r, message=FALSE, warning=FALSE}
