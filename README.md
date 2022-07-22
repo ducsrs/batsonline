@@ -43,7 +43,8 @@ First, the you will need to ensure...
 
 Then, before running, make sure...
 - you have a main folder that contains two subfolders; 'Data' and 'Code'
-- the subfolder called 'Data' holds all the data files, sorted into a folder tree containing paths of the following format: Compartment #/C#_S#/... , 
+- the subfolder called 'Data' holds all the data files, sorted into a folder tree containing paths of the following format: 
+- Compartment #/C#_S#/... , 
   where the first subfolder stands for compartment number, 
   and the second subfolder stands for site ID composed of compartment number and site number separated by an underscore
 - the subfolder called 'Code' holds all the code files from this repository, such as the data read, the exploratory markdowns, and the dashboard
