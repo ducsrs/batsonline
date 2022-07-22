@@ -37,16 +37,13 @@ This tab will display a graph of sampling activity over time, as well as the pro
 microphone.
 
 ## To Run the Code:
-First, the user will need to ensure that they have RStudio downloaded. The user will also need to make sure that their working directory includes `app.R`,
-`dataRead-bats.R`, and of course the data itself. From there, all a user will need to do is run `app.R` and it should run our dashboard. 
-
-
-
-
-
-
-
-
-
-
-
+First, the you will need to ensure... 
+- you have R (available free at https://cran.r-project.org/) 
+- you have RStudio (available free at https://www.rstudio.com/products/rstudio/download/)
+Then, before running, make sure...
+- you have a main folder that contains two subfolders; 'Data' and 'Code'
+- the subfolder called 'Data' holds all the data files, sorted into a folder tree containing paths of the following format: Compartment #/C#_S#/... , 
+  where the first subfolder stands for compartment number, 
+  and the second subfolder stands for site ID composed of compartment number and site number separated by an underscore
+- the subfolder called 'Code' holds all the code files from this repository, such as the data read, the exploratory markdowns, and the dashboard
+- you set your RStudio session working directory to the 'Code' folder (top of the RStudio interface: Session > Set Working Directory > Choose Directory) 
