@@ -38,7 +38,7 @@ microphone.
 
 ## To Run the Code:
 First, the user will need to ensure that they have RStudio downloaded. The user will also need to make sure that their working directory includes `app.R`,
-`dataRead.R`, and of course the data itself. From there, all a user will need to do is run `app.R` and it should run our dashboard. 
+`dataRead-bats.R`, and of course the data itself. From there, all a user will need to do is run `app.R` and it should run our dashboard. 
 
 
 
