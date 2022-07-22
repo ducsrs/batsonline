@@ -28,6 +28,8 @@ fixDates <- function( date ){
 
 # DATA COMPILATION READ COMPLETE!
 
+### Feel free to close this window, or scroll and read to further understand the process
+
 
 ## Reminder:
 
