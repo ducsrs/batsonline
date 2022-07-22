@@ -1,0 +1,202 @@
+---
+title: "Spatial Trends"
+author: "Monae Scott, Hallie Rutten"
+date: '2022-06-28'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# load libraries -----
+library(plotly)
+library(ggthemes)
+
+# basic read -----
+source('Read-bats.R')
+
+# sensor data read -----
+source('Read-sensorDates.R')
+  
+# join bats and sensor site data -----
+bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
+
+library(readxl)
+batspecies <- read_excel("../BatSpecies.xlsx")
+#left join the 2 datasets
+bats<- left_join(bats,batspecies, by="AUTO.ID")
+
+# group common names -----
+bats <- bats %>% 
+  mutate( group_common = ifelse(ID_group=="MYOTIS", "Genus Myotis", Common),
+          group_common = ifelse(ID_group=="EPTFUS.LASNOC",
+                                "Big Brown Bat/Silver-haired Bat",group_common),
+          group_common = ifelse(ID_group=="LASBOR.NYCHUM",
+                                "Red Bat/Evening Bat", group_common) )
+
+# group scientific names -----
+bats <- bats %>% 
+  mutate( group_species = ifelse(ID_group=="MYOTIS", "Myotis species", Scientific),
+          group_species = ifelse(ID_group=="EPTFUS.LASNOC",
+                                "Eptesicus fuscus/Lasionycteris noctivagans", group_species),
+          group_species = ifelse(ID_group=="LASBOR.NYCHUM",
+                                "Lasiurus borealis/Nycticeius humeralis", group_species) )
+```
+
+# Trends by Compartment
+
+## Exploratory graph
+
+```{r, fig.height=20, message=FALSE, warning=FALSE}
+#create a df for compartments
+compart<-bats %>% 
+  mutate( COMPARTMENT = factor( COMPARTMENT, 
+                                levels = c("C1",
+                                           "C5",
+                                           "C8",
+                                           "C20",
+                                           "C22",
+                                           "C24",
+                                           "C27",
+                                           "C31",
+                                           "C33",
+                                           "C36",
+                                           "C40",
+                                           "C46",
+                                           "C48",
+                                           "C50",
+                                           "C53"))) %>% 
+  group_by(COMPARTMENT, AUTO.ID) %>% 
+  tally()
+
+#plot species by each compartment 
+ggplot(data=compart %>% filter(! AUTO.ID %in% c("no.ID", "Noise")), 
+       aes(x=AUTO.ID, y=n, fill=AUTO.ID))+
+  geom_col()+
+  facet_wrap(~COMPARTMENT, scales="free", ncol=3) +
+  theme( legend.position = "none" ) +
+  coord_flip()+
+    scale_y_continuous(n.breaks = 4)
+
+```
+
+
+
+
+
+# DASHBOARD PREP
+
+### Create dummy input variables
+
+```{r, message=FALSE, warning=FALSE}
+# Universal inputs (grouping, group, year, month)
+# site.comp (vector - compartments)
+# site.wrapVar (single value - none, site)
+bad <- c('no.ID','Noise')
+
+# stand-in input variables -----
+input.grouping <- 'species group'
+input.group <- unique(bats$group_common)
+input.group <- input.group[-which(input.group%in%bad)]
+input.year <- c(2017:2022)
+input.month <- month.abb[1:12]
+site.wrapVar <- 'site'
+site.comp <- unique(bats$COMPARTMENT)
+site.granularity <- 'year'
+
+# colorblind palette -----
+cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#133139")
+```
+
+### filter data as appropriate
+
+```{r, message=FALSE, warning=FALSE}
+# basic filter -----
+bats.sub <- bats %>% 
+  filter( year %in% input.year, month %in% input.month )
+
+# set grouping var column -----
+if(input.grouping=='species'){ 
+  bats.sub <- bats.sub %>% mutate(group=Common, species=Scientific) }
+if(input.grouping=='species group'){ 
+  bats.sub <- bats.sub %>% mutate(group=group_common, species=group_species) }
+if(input.grouping=='cave dependency'){ 
+  bats.sub <- bats.sub %>% mutate(group=obligate, species=obligate) }
+
+# group filter -----
+bats.sub <- bats.sub %>% 
+  filter( group %in% input.group )
+```
+
+### perform activity calculations
+
+```{r, message=FALSE, warning=FALSE}
+# set granularity level -----
+if(site.granularity == 'year'){
+  bats.map <- bats.sub %>% mutate( div=year )
+} else if(site.granularity == 'month'){
+  bats.map <- bats.sub %>% 
+    mutate( div=as.Date(paste(year,month,1,sep='-')) )
+} else { bats.map <- bats.sub %>% mutate( div=DATE ) }
+
+# set wrapV by input wrap var -----
+if(site.wrapVar=='site'){ bats.map <- bats.map %>% mutate(wrapV=SITE) }
+
+# summarize by appropriate groups -----
+if(site.wrapVar == 'none'){
+  bats.map <- bats.map %>% 
+    group_by(COMPARTMENT,div) %>% 
+    mutate( nSensors = length(unique(siteDate)) )
+  bats.map <- bats.map %>% 
+    group_by(COMPARTMENT,div,group,species) %>% 
+    summarize( count=n(), relFreq=count/nSensors )
+} else {
+  bats.map <- bats.map %>% 
+    group_by(COMPARTMENT,div,wrapV) %>% 
+    mutate( nSensors = length(unique(siteDate)) )
+  bats.map <- bats.map %>% 
+    group_by(COMPARTMENT,div,group,species,wrapV) %>% 
+    summarize( count=n(), relFreq=count/nSensors )
+}
+bats.map <- distinct(bats.map)
+```
+
+### make graphs
+
+```{r, message=FALSE, warning=FALSE}
+# graphing loop -----
+for(comp in site.comp){
+  
+  # generate graph title -----
+  comp.T <- paste("Compartment",comp,"Bat Activity")
+  
+  # make base plot -----
+  site.p <- ggplot( bats.map %>% filter(COMPARTMENT==comp), 
+                    aes(x=div, y=relFreq, color=group) ) +
+    scale_fill_manual(values = cbPalette) +
+    labs(title=comp.T,
+         x="Date", y ="Relative Frequency",
+         caption="Sewanee Bat Study, DataLab 2022")
+  
+  # add line and point geoms -----
+  site.p <- site.p + geom_line() + geom_point()
+  
+  # make year graph neat -----
+  if(site.granularity == 'year'){
+    site.p <- site.p + 
+      scale_x_continuous( breaks = c(min(bats.map$div):max(bats.map$div)) )
+  }
+  
+  # wrap if appropriate -----
+  if(site.wrapVar != 'none'){
+    site.p <- site.p + facet_wrap(~wrapV)
+  }
+  
+  # plot -----
+  print(site.p)
+  
+}# end graphing loop
+
+# plot with plotly ----
+#ggplotly( monthly.p, hovertemplate=paste() )
+```

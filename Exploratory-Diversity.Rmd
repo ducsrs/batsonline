@@ -1,0 +1,192 @@
+---
+title: 'Bats: Diversity Trends'
+author: "Shelby Cline, Hallie Rutten"
+date: '2022-06-29'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(plotly)
+
+# basic read -----
+source('Read-bats.R')
+
+# sensor data read -----
+source('Read-sensorDates.R')
+  
+# join bats and sensor site data -----
+bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
+  
+library(readxl)
+batspecies <- read_excel("../BatSpecies.xlsx")
+#left join the 2 datasets
+bats<- left_join(bats,batspecies, by="AUTO.ID")
+
+# group common names -----
+bats <- bats %>% 
+  mutate( group_common = ifelse(ID_group=="MYOTIS", "Genus Myotis", Common),
+          group_common = ifelse(ID_group=="EPTFUS.LASNOC",
+                                "Big Brown Bat/Silver-haired Bat",group_common),
+          group_common = ifelse(ID_group=="LASBOR.NYCHUM",
+                                "Red Bat/Evening Bat", group_common) )
+
+# group scientific names -----
+bats <- bats %>% 
+  mutate( group_species = ifelse(ID_group=="MYOTIS", "Myotis species", Scientific),
+          group_species = ifelse(ID_group=="EPTFUS.LASNOC",
+                                "Eptesicus fuscus/Lasionycteris noctivagans", group_species),
+          group_species = ifelse(ID_group=="LASBOR.NYCHUM",
+                                "Lasiurus borealis/Nycticeius humeralis", group_species) )
+```
+
+# Diversity (species proportion) Trends
+
+Big Graph
+
+```{r, message=FALSE, warning=FALSE}
+  
+# by changing the x-axis value, we can create a couple of different graphs to include on the tab to tell different stories
+
+#this is where the main graph is created. first by creating a new dataframe where a new column is created that shows the total bat calls per year by species, while filtering out all noise.
+bats.per <- bats %>% 
+  filter(! grepl('Noise', AUTO.ID, ignore.case = TRUE)) %>% 
+  group_by(year) %>% 
+  mutate(tot_bat = n())
+
+# the vision was to have percentages that are displayed on the graph, so essentially the proportion of species bat recordings are put over total recordings, then multiplied by 100 to give a percent, with the distinction of a percentage being taken from each year as well.
+
+bats.per <- bats.per %>% 
+  mutate(year = factor(year, levels = min(bats.per$year):max(bats.per$year))) %>% 
+  group_by(year, AUTO.ID, Common) %>% 
+  summarise(prop = n()/tot_bat, 
+            perc = prop*100)
+
+
+# using the distinct command so there is only one observation per species per year
+bats.per <- distinct(bats.per)
+
+#this is a custom colorblind palette because all others only contain 8
+cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#9200bc")
+
+# the ggplot graph was made first, plotting the percentages of each species against the different years, which each species representing a color on the bars. This is all wrapped inside of an object so that plotly can be used. The text = paste function dictates what text goes inside of the box of text from the hover over feature. 
+diversity_graph <- ggplot(data = bats.per)+
+  geom_col(aes(x = year,
+               y = perc,
+               fill = AUTO.ID, 
+               text = paste("Percentage:",round(prop*100, 1),
+                            "Species:", Common)))+
+  scale_fill_manual(values = cbPalette)+
+  labs(title = 'Diversity Trends of Bat Species',
+       subtitle = 'Percentages of Every Year since 2017',
+       x = 'Year',
+       y = 'Percent of Total Recordings')
+  
+
+# this is the plotly object, with tooltip serving as instructions for what the hover textbox looks like.
+ggplotly(diversity_graph, tooltip = c("fill", "text"))
+
+```
+
+
+
+
+
+
+# DASHBOARD PREP:
+
+### create dummy input variables
+
+```{r, message=FALSE, warning=FALSE}
+# Universal inputs (grouping, group, year, month)
+# diversity.wrapVar (vector - none, management)
+bad <- c('no.ID','Noise')
+
+# stand-in input variables -----
+input.grouping <- 'species group'
+input.group <- unique(bats$group_common)
+input.group <- input.group[-which(input.group%in%bad)]
+input.year <- c(2017:2022)
+input.month <- month.abb[1:12]
+diversity.wrapVar <- 'none'
+
+# colorblind palette -----
+cbPalette <- c("#600047", "#d7a8d4", "#f5dfef", "#fe5f00","#fed457", "#c2c527", "#9ae825","#6f9c01", "#c5d5ea","#d3ffe2",  "#a2c2c6", "#087d93","#0c3660", "#133139")
+```
+
+### filter data as appropriate
+
+```{r, message=FALSE, warning=FALSE}
+# basic filter -----
+bats.sub <- bats %>% 
+  filter( year %in% input.year, month %in% input.month )
+
+# set grouping var column -----
+if(input.grouping=='species'){ 
+  bats.sub <- bats.sub %>% mutate(group=Common, species=Scientific) }
+if(input.grouping=='species group'){ 
+  bats.sub <- bats.sub %>% mutate(group=group_common, species=group_species) }
+if(input.grouping=='cave dependency'){ 
+  bats.sub <- bats.sub %>% mutate(group=obligate, species=obligate) }
+
+# group filter -----
+bats.sub <- bats.sub %>% 
+  filter( group %in% input.group )
+```
+
+### perform species proportions calculations
+
+```{r, message=FALSE, warning=FALSE}
+# set wrapV by input wrap var -----
+if(diversity.wrapVar=='management'){ bats.div <- bats.sub %>% mutate(wrapV=habitat) }
+
+# summarize by appropriate groups -----
+if(diversity.wrapVar=='none'){
+  bats.div <- bats.sub %>% 
+    group_by(year) %>% 
+    mutate( total=n() )
+  bats.div <- bats.div %>% 
+    mutate( year=factor(year, levels=min(year):max(year)) ) %>% 
+    group_by(year,group,species) %>% 
+    summarise( prop = n()/total, 
+               perc = prop*100 )
+} else {
+  bats.div <- bats.div %>% 
+    group_by(year,wrapV) %>% 
+    mutate( total=n() )
+  bats.div <- bats.div %>% 
+    mutate( year=factor(year, levels=min(year):max(year)) ) %>% 
+    group_by(year,wrapV,group,species) %>% 
+    summarise( prop = n()/total, 
+               perc = prop*100 )
+}
+bats.div <- distinct(bats.div)
+```
+
+### Make plot
+
+```{r, message=FALSE, warning=FALSE}
+# make base plot -----
+diversity.p <- ggplot( bats.div, aes(x=year, y=perc, fill=group) ) +
+  #geom_col( aes( x=year, y=perc, fill=group, 
+  #               text=paste0("Percentage: ",round(perc),"% ") ) )+
+  scale_fill_manual(values = cbPalette)+
+  labs(title='Bat Species Proportions',
+       x='Year', y='Percent of Total Activity',
+       caption="Sewanee Bat Study, DataLab 2022",
+       fill="Species Group")
+
+# add geom col -----
+diversity.p <- diversity.p + geom_col()
+  
+# wrap if appropriate -----
+if(diversity.wrapVar != 'none'){
+  diversity.p <- diversity.p + facet_wrap(~wrapV)
+}
+
+# plot with plotly -----
+#ggplotly(diversity.p, tooltip=c("fill", "text"))
+diversity.p
+```
+

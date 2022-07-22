@@ -1,0 +1,259 @@
+---
+title: 'Sampling Activity and Sensor Performance'
+author: "Hallie Rutten"
+date: '2022-06-29'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# load libraries -----
+library(plotly)
+library(ggthemes)
+
+# basic read -----
+source('Read-bats.R')
+
+# sensor data read -----
+source('Read-sensorDates.R')
+  
+# join bats and sensor site data -----
+bats <- left_join(bats,sensorDates, by=c('siteID','DATE'))
+```
+
+
+
+
+
+# EXPLORATORY:
+
+## Sampling Effort Trends
+
+```{r, message=FALSE, warning=FALSE}
+# recording effort by date -----
+sensor.days <- sensorDates %>% 
+  filter( !is.na(project) | !is.na(monitor) ) %>%
+  group_by(DATE) %>% 
+  summarize( nSensors = n() )
+
+ggplot( sensor.days ) +
+  geom_line( aes(x=DATE, y=nSensors) )
+
+ggplot( sensor.days ) +
+  geom_point( aes(x=DATE, y=nSensors), alpha=0.4 )
+```
+
+## Sensor Performance Trends
+
+```{r, message=FALSE, warning=FALSE}
+# monitor accuracy -----
+IDs <- unique(bats$AUTO.ID)
+IDbats <- IDs[which( IDs!='no.ID' & IDs!='Noise')]
+
+monitor.acc <- bats %>% 
+  group_by(monitor,year) %>% 
+  summarize( nBats = sum(as.numeric(AUTO.ID %in% IDbats)),
+             unID  = sum(as.numeric(grepl("no.ID",AUTO.ID,ignore.case=TRUE))),
+             noise = sum(as.numeric(grepl("Noise",AUTO.ID,ignore.case=TRUE))),
+             total = sum(nBats,unID,noise),
+             p.unID = unID/total, 
+             p.noise = noise/total )
+
+ggplot( monitor.acc ) +
+  geom_col( aes(x=monitor, y=p.unID, fill=p.unID) ) +
+  facet_wrap(~year) +
+  theme(legend.position='none') +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title="Monitor 'no ID' observations",
+       x="Monitor number", y="proportion of unidentified bats",
+       caption="DataLab 2022")
+
+ggplot( monitor.acc ) +
+  geom_col( aes(x=monitor, y=p.noise, fill=-p.noise) ) +
+  facet_wrap(~year) +
+  theme(legend.position='none') +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title="Monitor 'noise' observations",
+       x="Monitor number", y="proportion of noise",
+       caption="DataLab 2022")
+```
+
+
+
+
+
+
+
+
+
+
+# DASHBOARD PREP:
+
+## Sampling Activity
+
+```{r, message=FALSE, warning=FALSE}
+selectedYears <- unique(bats$year)
+
+bats.sub <- bats %>% 
+  filter( year %in% selectedYears )
+
+sampling.granularity <- 'month'
+sampling.style <- 'line'
+```
+
+```{r, message=FALSE, warning=FALSE}
+    if(sampling.granularity == 'year'){
+      sensorDates <- sensorDates %>% mutate( div=year(DATE) )
+    } else if(sampling.granularity == 'month'){
+      sensorDates <- sensorDates %>% 
+        mutate( div=as.Date(paste(year(DATE),month(DATE),1,sep='-')) )
+    }else if(sampling.granularity == 'day'){
+      sensorDates <- sensorDates %>% mutate( div=DATE )
+    }
+```
+
+```{r, message=FALSE, warning=FALSE}
+    sampling.days <- sensorDates %>% 
+      filter( !is.na(project) | !is.na(monitor) ) %>%
+      group_by(div) %>% 
+      summarize( nSites = n() )
+```
+
+```{r, message=FALSE, warning=FALSE}
+    sample.plot <- ggplot( sampling.days, aes(x=div, y=nSites) )
+    
+    if(sampling.style == 'line'){
+      sample.plot <- sample.plot + geom_line()
+    }
+    if(sampling.style == 'points'){
+      sample.plot <- sample.plot + geom_point(alpha=0.4)
+    }
+    
+    sample.plot +
+      labs(title="Sampling Activity",
+           x=sampling.granularity, y="N Sites",
+           caption="Sewanee Bat Study, DataLab 2022")
+```
+
+
+## Sensor accuracy
+
+```{r, message=FALSE, warning=FALSE}
+selectedYears <- unique(bats$year)
+selectedComps <- unique(bats$COMPARTMENT)
+
+bats.sub <- bats %>% 
+  filter( year %in% selectedYears,
+          COMPARTMENT %in% selectedComps )
+
+sensor.wrapVar <- 'year'
+sensor.ob <- 'Noise'
+```
+
+```{r, message=FALSE, warning=FALSE}
+if(sensor.wrapVar == 'year'){
+  bats.monitor <- bats.sub %>% mutate( wrapV=year)
+}
+
+if(sensor.wrapVar == 'none'){
+  bats.monitor <- bats.sub %>% 
+      group_by(monitor) %>% 
+      summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
+                 unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
+                 noise = sum(as.numeric(grepl("Noise",AUTO.ID))),
+                 total = n(),
+                 p.unID = unID/total, 
+                 p.noise = noise/total )
+} else {
+  bats.monitor <- bats.monitor %>% 
+      group_by(monitor,wrapV) %>% 
+      summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
+                 unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
+                 noise = sum(as.numeric(grepl("Noise",AUTO.ID))),
+                 total = n(),
+                 p.unID = unID/total, 
+                 p.noise = noise/total )
+}
+```
+
+```{r, message=FALSE, warning=FALSE}
+if(sensor.ob == 'Noise'){
+  monitor.p <- ggplot( bats.monitor, aes(x=monitor, y=p.noise, fill=-p.noise) )
+} else {
+  monitor.p <- ggplot( bats.monitor, aes(x=monitor, y=p.unID, fill=-p.unID) )
+}
+
+monitor.p <- monitor.p +
+  geom_col() +
+  theme(legend.position='none') +
+  theme(axis.text.x = element_text(angle = 90))
+
+if(sensor.wrapVar == 'none'){
+  monitor.p
+} else {
+  monitor.p + facet_wrap(~wrapV)
+}
+```
+
+
+
+
+## Mic accuracy
+
+```{r, message=FALSE, warning=FALSE}
+selectedYears <- unique(bats$year)
+selectedComps <- unique(bats$COMPARTMENT)
+
+bats.sub <- bats %>% 
+  filter( year %in% selectedYears,
+          COMPARTMENT %in% selectedComps )
+
+sensor.wrapVar <- 'year'
+sensor.ob <- 'Noise'
+```
+
+```{r, message=FALSE, warning=FALSE}
+if(sensor.wrapVar == 'year'){
+  bats.mic <- bats.sub %>% mutate( wrapV=year)
+}
+
+if(sensor.wrapVar == 'none'){
+  bats.mic <- bats.sub %>% 
+      group_by(mic) %>% 
+      summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
+                 unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
+                 noise = sum(as.numeric(grepl("Noise",AUTO.ID))),
+                 total = n(),
+                 p.unID = unID/total, 
+                 p.noise = noise/total )
+} else {
+  bats.mic <- bats.mic %>% 
+      group_by(mic,wrapV) %>% 
+      summarize( nBats = sum(as.numeric(!grepl('no.ID|Noise',AUTO.ID))),
+                 unID  = sum(as.numeric(grepl('no.ID',AUTO.ID))),
+                 noise = sum(as.numeric(grepl("Noise",AUTO.ID))),
+                 total = n(),
+                 p.unID = unID/total, 
+                 p.noise = noise/total )
+}
+```
+
+```{r, message=FALSE, warning=FALSE}
+if(sensor.ob == 'Noise'){
+  mic.p <- ggplot( bats.mic, aes(x=mic, y=p.noise, fill=-p.noise) )
+} else {
+  mic.p <- ggplot( bats.mic, aes(x=mic, y=p.unID, fill=-p.unID) )
+}
+
+mic.p <- mic.p +
+  geom_col() +
+  theme(legend.position='none') +
+  theme(axis.text.x = element_text(angle = 90))
+
+if(sensor.wrapVar == 'none'){
+  mic.p
+} else {
+  mic.p + facet_wrap(~wrapV)
+}
+```

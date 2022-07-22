@@ -11,9 +11,8 @@
 
 library(shiny)
 library(shinydashboard)
-library(plotly)
 
-source('../dataRead.R')
+source('dataRead.R')
 
 bad <- c('no.ID','Noise')
 
@@ -303,7 +302,7 @@ ui <- dashboardPage(
                      hr(),
                      
                      h4('Monae Scott C\'23 - fellow'),
-                     img(src='MOnae.png', width="33%", height="auto"),
+                     img(src='Monae.png', width="33%", height="auto"),
                      br(), "Major: Sustainability",
                      br(), tags$a(href='scottma0@sewanee.edu',"Email"),
                      br(), tags$a(href='http://www.linkedin.com/in/monae-scott',
@@ -574,6 +573,14 @@ ui <- dashboardPage(
                 )#end controls column
                 
               ),#end sites row -
+              
+              # map row -----
+              fluidRow(
+                box( title="Compartments Map", width=12,
+                     solidHeader=TRUE, status='primary',
+                     img(src='CompMap.png', width="100%", height="auto")
+                )#end map box
+              )#end map row -
               
       ),#end Spatial ---
       #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
