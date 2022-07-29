@@ -12,7 +12,7 @@
 library(shiny)
 library(shinydashboard)
 
-source('dataRead.R')
+source('DataRead.R')
 
 bad <- c('no.ID','Noise')
 
