@@ -14,7 +14,7 @@ library(ggthemes)
 #--BATS--######################################################################
 
 # read bat acoustic data -----
-bats <- readRDS('../../data-bats.RData')
+bats <- readRDS('/Data/Bats/data-bats.RData')
 #bats <- read.csv('../../data-bats.csv')
 
 # calculate new vars -----
@@ -51,7 +51,7 @@ bats <- bats %>%
 #--SENSORS--###################################################################
 
 # read sensor site and date data -----
-sensors <- read_csv('../../sensorCSdates.csv', show_col_types=FALSE) 
+sensors <- read_csv('/Data/Bats/sensorCSdates.csv', show_col_types=FALSE) 
 sensors <- sensors %>% 
   mutate( siteID = gsub('-','_',siteID),
           LONGITUDE = -abs(LONGITUDE), 
@@ -87,7 +87,7 @@ rm(sns,temp,DATE,i,var)
 #--SPECIES--###################################################################
 
 # read basic names -----
-batspecies <- read_excel("../../BatSpecies.xlsx")
+batspecies <- read_excel("/Data/Bats/BatSpecies.xlsx")
 
 # join bats and species names data -----
 bats <- left_join(bats,batspecies, by="AUTO.ID")
@@ -113,7 +113,7 @@ bats <- bats %>%
 #--WEATHER--###################################################################
 
 # hourly weather data -----
-weather.hourly <- read_xlsx("../../SUD Weather Station.xlsx", sheet=2) %>% 
+weather.hourly <- read_xlsx("/Data/Bats/SUD Weather Station.xlsx", sheet=2) %>% 
   rename( AvgTemp = `Air Temp Avg (C)`,
           MaxWind = `wind speed (high) (m/s)`,
           MinWind = `wind speed (low) (m/s)`,
@@ -127,7 +127,7 @@ weather.hourly <- read_xlsx("../../SUD Weather Station.xlsx", sheet=2) %>%
   select( DATE, year, month, monthN, hour, AvgWind, AvgTemp)
 
 # recorded rain data -----
-rain.hourly <- read_xlsx("../../SUD Weather Station.xlsx", sheet = 3) %>% 
+rain.hourly <- read_xlsx("/Data/Bats/SUD Weather Station.xlsx", sheet = 3) %>% 
   rename( rain.intensity = `Rain Intensity (mm/sec)` ) %>% 
   mutate( DATE = date(Timestamp),
           year=year(Timestamp),
