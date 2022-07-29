@@ -17,6 +17,10 @@ library(ggthemes)
 bats <- readRDS('/Data/Bats/data-bats.RData')
 #bats <- read.csv('../../data-bats.csv')
 
+# throw out noise, noID for performance
+bats <- bats %>%
+  filter(AUTO.ID != 'no.ID' & AUTO.ID != 'Noise')
+
 # calculate new vars -----
 bats <- bats %>% 
   mutate(year = year(DATE), 
