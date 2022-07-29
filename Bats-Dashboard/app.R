@@ -741,13 +741,13 @@ server <- function(input, output) {
                                  label="Select species:",
                                  choices = species.ops,
                                  multiple = TRUE,
-                                 selected = species.ops[-which(species.ops%in%bad)]
+                                 selected = species.ops
            ),#end species grouping UI
            "species group"=selectInput(inputId="group", 
                                        label="Select species group(s):",
                                        choices = groups.ops, 
                                        multiple = TRUE,
-                                       selected = groups.ops[-which(groups.ops%in%bad)]
+                                       selected = groups.ops
            ),#end species group grouping UI
            "cave dependency"=selectInput(inputId="group", 
                                        label="Select cave status:",
